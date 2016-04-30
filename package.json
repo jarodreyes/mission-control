@@ -1,0 +1,17 @@
+{
+  "name": "mission-control",
+  "version": "1.0.0",
+  "description": "Mission Control game for $bash 2016",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Jarod Reyes",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.13.4",
+    "jade": "^1.11.0",
+    "johnny-five": "^0.9.44",
+    "socket.io": "^1.4.5"
+  }
+}
