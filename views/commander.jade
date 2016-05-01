@@ -2,28 +2,31 @@ doctype html
 html
   head
     title Mission Control
-    style.
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { 
-        font: 33px 'Consolas', Serif, Arial;
-        color: lime;
-        background: black;
-      }
-      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
-      form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
-      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
-      #commands { list-style-type: none; margin: 0; padding: 0; }
-      #commands li { padding: 5px 10px; }
-      #commands li:nth-child(odd) { background: rgba(255,255,255,0.1); }
+    link(rel="stylesheet" href="/css/font-awesome.min.css")
+    link(rel="stylesheet" href="/css/styles.css")
+    script(src='/socket.io/socket.io.js')
+    script(src='/jquery/jquery.js')
   body(class=typeof cssBody === 'undefined' ? 'property-page' : '')
     ul#commands
-    script(src='/socket.io/socket.io.js')
-    script(src='http://code.jquery.com/jquery-1.11.1.js')
     script.
       var id = "#{station}";
       var socket = io();
-      socket.on("station"+id, function(msg){
-        $('#commands').append($('<li>').text(msg));
+      socket.on('connect', function() {
+        socket.emit('commanderJoined', {'station': id})
+      })
+      socket.on("station"+id, function(data){
+        var msg = data.msg;
+        var type = data.type;
+        if (type == "hint") {
+          $('#commands').append($('<li class="hint">').text(msg));  
+        } else if (type == "command") {
+          $('li').removeClass('current');
+          $('#commands').append($('<li class="error current">').text(msg));
+          $('li.current').append('<div class="progressBar"><div></div></div>');
+          progress(data.timeLeft, data.timeLeft);
+        } else {
+          $('#commands').append($('<li>').text(msg));
+        }
       });
       socket.on("command", function(msg){
         switch (msg) {
@@ -34,3 +37,15 @@ html
             $('#commands').append($('<li>').text(msg));
         }
       });
+      function progress(timeleft, timetotal) {
+        var progressBarWidth = timeleft * $('.progressBar').width() / timetotal;
+        $('li.current > .progressBar > div').css( 'width', progressBarWidth );
+
+        if(timeleft > 0) {
+          setTimeout(function() {
+            progress(timeleft - 1, timetotal);
+          }, 1000);
+        } else {
+          $('.progressBar').remove();
+        }
+      };

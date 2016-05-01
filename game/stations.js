@@ -1,10 +1,29 @@
 var five = require("johnny-five");
 var clientIo = require('socket.io-client');
 var CommandFactory = require('./CommandFactory');
+// var play = require('play').Play();
 
-STATION_COUNT = 2;
+STATION_COUNT = 1;
 DEFAULT_WAIT_TIME = 5000;
 PORTS = ["/dev/cu.usbmodem1421", "/dev/cu.usbmodem1411"];
+TIMED = false;
+FAILURES_ALLOWED = 10;
+// console.log = function(){}
+
+var pins = [
+  0, // 0
+  949, // Pin 1
+  1023, // Pin 2 is broken, 1023 when Decreased
+  1023, // Pin 3
+  1023, // Pin 4
+  0, // Pin 5 is borked 1023, no change
+  967, // Pin 6
+  1023, // Pin 7
+  1023, // Pin 8 when user Grounds it
+  967, // Pin 9
+  1020, // Pin 10 should have less than 1023
+  -1, // Pin 11 953, 1023
+]
 
 // ----------------------------------------- STATION ---------------------- //
 // **************************************************************************//
@@ -44,7 +63,6 @@ Station.prototype.connectBoard = function() {
   // When board is connected lets' connect this station
   this.board.on("ready", function() {
     // Create an Led on pin 13
-    var led = new five.Led(13);
     var ardy = this;
     // Once the board is connected, notify the commander that we're ready.
     station.socket.emit('stationJoined', {'stationId': station.id});
@@ -52,41 +70,45 @@ Station.prototype.connectBoard = function() {
 
     // For Testing, passes the led & socket objects to the REPL
     this.repl.inject({
-      led: led
+      ardy: ardy
     });
 
     function addInput(board, i, vRead) {
-      var vRead = 1023 || vRead;
+      var vRead = pins[i] || vRead;
       board.analogRead(i, function(voltage) {
+        // console.log("Pin"+i+"Voltage is: "+voltage);
         if (voltage == vRead) {
           station.checkInput(i);
+          console.log("Pin"+i+"Voltage is: "+voltage);
         }
       });
     }
 
     function processPinIO(pinObject, val) {
-      // if (typeof(pinObject) == Array) {
-      //   for (var i = pinObject.length - 1; i >= 0; i--) {
-      //     ardy.digitalWrite(pinObject[i], val);
-      //   };
-      // } else {
-      //   ardy.digitalWrite(pinObject, val);
-      // }
+      console.log("Is array: "+pinObject instanceof Array);
+      if (pinObject instanceof Array) {
+        for (var i = pinObject.length - 1; i >= 0; i--) {
+          ardy.digitalWrite(pinObject[i], val);
+        };
+      } else {
+        ardy.digitalWrite(pinObject, val);
+      }
     }
 
     function processPinFlash(pinObject) {
-      // if (typeof(pinObject) == Array) {
-      //   for (var i = pinObject.length - 1; i >= 0; i--) {
-      //     var timey = setInterval(function() {
-      //       ardy.digitalWrite(13, 1);
-      //     }, 500);
-      //     setTimeout(function() {
-      //       clearInterval(timey);
-      //     }, station.getCurrentCommand().time)
-      //   };
-      // } else {
-      //   ardy.digitalWrite(pinObject, val);
-      // }
+      if (pinObject instanceof Array) {
+        for (var i = pinObject.length - 1; i >= 0; i--) {
+          var timey = setInterval(function() {
+            var led = new five.Led(pinObject[i]);
+          }, 500);
+          setTimeout(function() {
+            clearInterval(timey);
+          }, station.getCurrentCommand().time * 1000);
+        };
+      } else {
+        var led = new five.Led(pinObject);
+        led.strobe();
+      }
     }
 
     function processWiringCommands(command) {
@@ -96,7 +118,7 @@ Station.prototype.connectBoard = function() {
       }
       if (command.flash != undefined) {
         console.log('Pin'+command.flash+" Flashing!");
-        // ardy.digitalWrite(command.flash, 0);
+        processPinIO(command.flash);
       }
       if (command.on != undefined) {
         console.log('Pin'+command.on+" On!");
@@ -128,9 +150,10 @@ Station.prototype.connectBoard = function() {
     this.pinMode(31, five.Pin.OUTPUT);
     this.pinMode(32, five.Pin.OUTPUT);
 
-    station.socket.on('station'+station.id, function(cmd) {
-      command = station.getCurrentCommand();
-      if (command.command == cmd) {
+    station.socket.on('station'+station.id, function(data) {
+      var cmd = data.msg;
+      var command = station.getCurrentCommand();
+      if (command.command == cmd || command.success == cmd) {
         processWiringCommands(command);
       }
     });
@@ -140,9 +163,14 @@ Station.prototype.connectBoard = function() {
 }
 
 Station.prototype.checkInput = function(pin) {
+  console.log("Pin Firing: "+pin);
   var station = this;
+  while (pin == 11) {
+    station.emitFailure();
+    return;
+  }
   if (this.getCurrentCommand().input == pin) {
-    if (station.completed < station.currentStep) {
+    if (station.getCompleted() < station.currentStep) {
       station.completed++;
       station.points += 100;
       station.emitCommand(station.getCurrentCommand().success);
@@ -155,13 +183,13 @@ Station.prototype.checkInput = function(pin) {
 }
 Station.prototype.nextCommand = function(cmd) {
   var c = this.currentCommand = this.commands[this.currentStep];
-  var command = c.command;
+  var command = c.command ? c.command : c.success;
   var nextCommandDelayMs = c.buffer * 1000;
   var timeToFixMs = c.time * 1000;
   var station = this;
   var actionStep = this.currentStep;
 
-  while (this.failures >= 3) {
+  while (this.failures >= FAILURES_ALLOWED) {
     return;
   }
   this.currentStep++;
@@ -177,24 +205,33 @@ Station.prototype.nextCommand = function(cmd) {
 Station.prototype.checkAnswer = function(actionStep, timeToFixMs) {
   var station = this;
   console.log("Awaiting Input?:"+this.awaitingInput(actionStep)+" ActStep"+actionStep);
+
+  // If we don't have an input, just execute the wait time and execute the next command
   while (this.getCurrentCommand().input == null) {
     setTimeout(function() {
+      station.completed++;
       station.nextCommand();
     }, DEFAULT_WAIT_TIME);
     return;
   }
+
+  // If we do have an input, execute the hint first, than register a failure
   if (this.awaitingInput(actionStep)) {
     station.emitCommand(station.getCurrentCommand().hint);
     setTimeout(function() {
       console.log("The Score:" +station.points+ "- The Step:" +actionStep);
       if (station.awaitingInput(actionStep)) {
-        station.emitCommand('Failure!');
-        station.failures++;
-        station.completed++;
-        station.nextCommand();
+        station.emitFailure();
       }
     }, timeToFixMs);
   }
+}
+
+Station.prototype.emitFailure = function() {
+  this.emitCommand('Failure!');
+  this.completed++;
+  this.failures++;
+  this.nextCommand();
 }
 
 Station.prototype.awaitingInput = function(actionStep) {
@@ -202,8 +239,15 @@ Station.prototype.awaitingInput = function(actionStep) {
 }
 
 Station.prototype.emitCommand = function(cmd) {
+  var type = "success";
+  var timeLeft = this.getCurrentCommand().time ? this.getCurrentCommand().time : DEFAULT_WAIT_TIME/1000;
+  if (this.getCurrentCommand().hint == cmd) {
+    type = 'hint';
+  } else if (this.getCurrentCommand().command == cmd) {
+    type = 'command';
+  }
   // this.socket.broadcast.emit("station"+this.id, cmd);
-  this.socket.emit("command", {'station':this.id, 'cmd':cmd});
+  this.socket.emit("command", {'station':this.id, 'msg':cmd, 'type':type, 'timeLeft':timeLeft});
   console.log("Station Command: "+this.id+" "+cmd);
   console.log("Station Stats - Completed:"+this.completed+" Current:"+this.currentStep+" Points:"+this.points);
 }
@@ -212,14 +256,23 @@ Station.prototype.getCurrentCommand = function() {
   return this.currentCommand;
 }
 
+Station.prototype.getCompleted = function() {
+  console.log("Completed: "+this.completed);
+  return this.completed;
+}
+
 Station.prototype.startGame = function() {
   var c = new CommandFactory();
   var station = this;
 
   this.commands = c.getCommands();
+  // play.on('play', function (valid) {
+  //   console.log('I just started playing!');
+  // });
+  // play.sound('');
 
   // Emit the next command in the list
-  this.nextCommand()
+  this.nextCommand();
 
   // setup listener for next_question
   this.socket.on("next_question", function(data) {
@@ -282,11 +335,17 @@ Stations.prototype.emitCommands = function(msg) {
   return this.stations;
 }
 
+Stations.prototype.resetGame = function() {
+  this.stations = {};
+  this.createStations();
+  return this.stations;
+}
+
 Stations.prototype.startGame = function() {
   // start the game for all Stations
   for (var stationId in this.stations) {
     var station = this.stations[stationId];
-    console.log(station, stationId);
+    console.log("Station ID"+stationId);
     station.startGame();
   }
   return this.stations;
