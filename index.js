@@ -35,7 +35,7 @@ Stations.init();
 io.on('connection', function(socket) {
   // Pass through commands from Stations to Screens
   socket.on('command', function(data){
-    io.emit("station"+data.station, {'msg': data.msg, 'type': data.type, 'timeLeft': data.timeLeft});
+    io.emit("station"+data.station, {'msg': data.msg, 'type': data.type, 'timeLeft': data.timeLeft, 'cid':data.cid});
   });
 
   socket.on('success', function(data){

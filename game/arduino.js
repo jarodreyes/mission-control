@@ -18,7 +18,7 @@ var pinVolts = [
 
 var connectBoard = function(station, board) {
   board.on("ready", function() {
-    // Create an Led on pin 13
+    // Create an arduino object to pass around
     var ardy = this;
     // Once the board is connected, notify the commander that we're ready.
     station.socket.emit('stationJoined', {'stationId': station.id});
@@ -108,7 +108,7 @@ var connectBoard = function(station, board) {
 
     station.socket.on('station'+station.id, function(data) {
       var cmd = data.msg;
-      var command = station.getCurrentCommand();
+      var command = station.getCommand(data.cid);
       if (command.command == cmd || command.success == cmd) {
         processWiringCommands(command);
       }

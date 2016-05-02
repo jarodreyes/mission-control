@@ -6,6 +6,7 @@ var arduino = require('./arduino');
 
 STATION_COUNT = 1;
 DEFAULT_WAIT_TIME = 5000;
+DEFAULT_INTERVAL = 7500;
 PORTS = ["/dev/cu.usbmodem1421", "/dev/cu.usbmodem1411"];
 TIMED = false;
 FAILURES_ALLOWED = 10;
@@ -53,100 +54,136 @@ Station.prototype.connectBoard = function() {
 Station.prototype.checkInput = function(pin) {
   console.log("Pin Firing: "+pin);
   var station = this;
+  var activeCommands = this.getActiveCommands();
   while (pin == 11) {
     station.emitFailure();
     return;
   }
-  if (this.getCurrentCommand().input == pin) {
-    if (station.getCompleted() < station.currentStep) {
-      station.completed++;
-      station.points += 100;
-      station.emitCommand(station.getCurrentCommand().success);
-      station.socket.emit('success', {'station':station.id})
+  // if any Active commands are listening for this pin, do something
+  for (var i = activeCommands.length - 1; i >= 0; i--) {
+    if (activeCommands[i].input == pin) {
+      activeCommands[i].clearHintTimer();
+      activeCommands[i].clearFailTimer();
+      if (station.getCompleted() < (station.currentStep - activeCommands.length)) {
+        station.completed++;
+        station.points += 100;
+        station.emitCommand(activeCommands[i].success);
+        station.socket.emit('success', {'station':station.id});
+      }
+    } else {
+      station.misses++;
+      console.log('Missed!')
     }
-  } else {
-    station.misses++;
-    console.log('Missed!')
-  }
+  };
 }
-Station.prototype.nextCommand = function(cmd) {
-  var c = this.currentCommand = this.commands[this.currentStep];
-  var command = c.command ? c.command : c.success;
-  var nextCommandDelayMs = c.buffer * 1000;
-  var timeToFixMs = c.time * 1000;
+
+Station.prototype.beginCommandSequence = function(command) {
+  var nextCommandDelayMs = command.buffer * 1000;
+  var timeToFixMs = command.time * 1000;
   var station = this;
   var actionStep = this.currentStep;
 
+  // If there isn't a command associated with the command object, then it's probably a success message.
+  var msg = command.command ? command.command : command.success;
+
+  this.emitCommand(msg, null, command);
+
+  // No matter what we want to fire the next command soon
+  while (command.input == null) {
+    setTimeout(function() {
+      station.completed++;
+      station.nextCommand('default');
+    }, DEFAULT_WAIT_TIME);
+    return;
+  } 
+
+  setTimeout(function() {
+    station.nextCommand("bgs");
+  }, DEFAULT_INTERVAL);
+
+  // Set this command as active
+  command.setActive();
+  
+  // Check for Failure
+  command.setFailTimer(function() {
+    station.emitFailure(command);
+  });
+
+  command.setHintTimer(function() {
+    station.emitCommand(command.hint, null, command)
+  });
+}
+
+Station.prototype.nextCommand = function(cmd) {
+  console.log(cmd);
+  var command = this.currentCommand = this.commands[this.currentStep];
+
   while (this.failures >= FAILURES_ALLOWED) {
-    station.endGame();
+    this.endGame();
     return;
   }
   this.currentStep++;
 
-  this.emitCommand(command);
-
-
-  this.timer = setTimeout(function() {
-    station.checkAnswer(actionStep, timeToFixMs);
-  }, nextCommandDelayMs);
+  this.beginCommandSequence(command);
 }
 
 Station.prototype.checkAnswer = function(actionStep, timeToFixMs) {
   var station = this;
   console.log("Awaiting Input?:"+this.awaitingInput(actionStep)+" ActStep"+actionStep);
 
-  // If we don't have an input, just execute the wait time and execute the next command
-  while (this.getCurrentCommand().input == null) {
-    setTimeout(function() {
-      station.completed++;
-      station.nextCommand();
-    }, DEFAULT_WAIT_TIME);
-    return;
-  }
-
   // If we do have an input, execute the hint first, than register a failure
-  if (this.awaitingInput(actionStep)) {
-    station.emitCommand(station.getCurrentCommand().hint);
-    setTimeout(function() {
-      console.log("The Score:" +station.points+ "- The Step:" +actionStep);
-      if (station.awaitingInput(actionStep)) {
-        station.emitFailure();
-      }
-    }, timeToFixMs);
-  }
 
   // Regardless we should fire a new command every 15 seconds.
   setTimeout(function() {
-    console.log("The Score:" +station.points+ "- The Step:" +actionStep);
+    
     if (station.awaitingInput(actionStep)) {
       station.emitFailure();
     }
   }, timeToFixMs);
 }
 
-Station.prototype.emitFailure = function() {
-  this.emitCommand('Failure!');
+Station.prototype.emitFailure = function(command) {
+  this.emitCommand(''+command.location+': '+command.failure+'', null, command);
   this.completed++;
   this.failures++;
-  this.nextCommand();
 }
 
 Station.prototype.awaitingInput = function(actionStep) {
   return this.completed <= actionStep;
 }
 
-Station.prototype.emitCommand = function(cmd, type) {
+Station.prototype.emitCommand = function(msg, type, command) {
+  console.log("Emit Command"+msg);
   var type = type ? type : "success";
-  var timeLeft = this.getCurrentCommand().time ? this.getCurrentCommand().time : DEFAULT_WAIT_TIME/1000;
-  if (this.getCurrentCommand().hint == cmd) {
+  var cId = command ? command.id : 0;
+  var timeLeft = this.getCommand(cId).time ? this.getCommand(cId).time : DEFAULT_WAIT_TIME/1000;
+  if (this.getCommand(cId).hint == msg) {
     type = 'hint';
-  } else if (this.getCurrentCommand().command == cmd) {
+  } else if (this.getCommand(cId).command == msg) {
     type = 'command';
   }
-  // this.socket.broadcast.emit("station"+this.id, cmd);
-  this.socket.emit("command", {'station':this.id, 'msg':cmd, 'type':type, 'timeLeft':timeLeft});
-  console.log("Station Command: "+this.id+" "+cmd);
+
+  this.socket.emit("command", {'station':this.id, 'msg':msg, 'type':type, 'timeLeft':timeLeft, 'cid': cId});
+  console.log("Station Command: "+this.id+" "+msg);
   console.log("Station Stats - Completed:"+this.completed+" Current:"+this.currentStep+" Points:"+this.points);
+}
+
+Station.prototype.getActiveCommands = function() {
+  var result = [];
+  for (var i = this.commands.length - 1; i >= 0; i--) {
+    if (this.commands[i].active) {
+      result.push(this.commands[i])
+    }
+  };
+  return result;
+}
+
+Station.prototype.getCommand = function(id) {
+  for (var i = this.commands.length - 1; i >= 0; i--) {
+    if (this.commands[i].id == id) {
+      return this.commands[i];
+    }
+  };
 }
 
 Station.prototype.getCurrentCommand = function() {
@@ -170,19 +207,10 @@ Station.prototype.startGame = function() {
 
   // Emit the next command in the list
   this.nextCommand();
-
-  // setup listener for next_question
-  this.socket.on("next_question", function(data) {
-    console.log("Next Questions!");
-    if (data.station == station.id) {
-      clearTimeout(station.timer);
-      station.nextCommand();
-    }
-  });
 }
 
 Station.prototype.endGame = function() {
-  this.emitCommand('Station Removed from Cluster. Mission Failed!');
+  this.emitCommand('Station Removed from Cluster. Mission Failed!', null, this.getCurrentCommand());
 }
 
 // ----------------------------------------- STATIONS ---------------------- //
