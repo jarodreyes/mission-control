@@ -11,9 +11,11 @@ html
     script.
       var id = "#{station}";
       var socket = io();
+
       socket.on('connect', function() {
         socket.emit('commanderJoined', {'station': id})
-      })
+      });
+
       socket.on("station"+id, function(data){
         var msg = data.msg;
         var type = data.type;
@@ -28,6 +30,7 @@ html
           $('#commands').append($('<li>').text(msg));
         }
       });
+
       socket.on("command", function(msg){
         switch (msg) {
           case 'reset':
@@ -37,6 +40,7 @@ html
             $('#commands').append($('<li>').text(msg));
         }
       });
+      
       function progress(timeleft, timetotal) {
         var progressBarWidth = timeleft * $('.progressBar').width() / timetotal;
         $('li.current > .progressBar > div').css( 'width', progressBarWidth );

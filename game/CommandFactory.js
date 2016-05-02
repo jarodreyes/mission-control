@@ -7,7 +7,7 @@ var gameSteps = [
 
   {'id':4, 'location':'Launch Engineer', 'command':'Internal Power Has Not Transferred From Buss B', 'on':null, 'input':4, 'hint':'Manually Transfer Power From Buss B Only', 'buffer':2, 'time':12, 'success': 'Internal Power Transfer Complete'},
 
-  {'id':6, 'location':'Launch Engineer', 'command':'Release Swing Arm', 'on':26, 'input':5, 'hint':'Swing Arm must be released', 'buffer':5, 'time':15, 'success': 'Swing Arm Released'},
+  {'id':10, 'location':'Launch Engineer', 'command':'Release Swing Arm', 'on':26, 'input':5, 'hint':'Swing Arm must be released', 'buffer':5, 'time':15, 'success': 'Swing Arm Released'},
 
   {'id':7, 'location':'Guidance', 'command':'Guidance Control #2 Did Not Release', 'on':26, 'input':7, 'hint':'Manually Release Guidance Control #2', 'buffer':5, 'time':15, 'success': 'Guidance Control Released'},
 
@@ -53,23 +53,78 @@ function getRandomInt() {
 CommandFactory.prototype.getCommands = function() {
   _this = this;
   for (var i = 0; i < gameOrder.length; i++) {
+    var command = {};
+
     if (!RANDOM) {
-      _this.commands.push(gameSteps[gameOrder[i]]);
+
+      command = new Command(gameSteps[gameOrder[i]]);
+
     } else {
-      
+
       // Get a unique random index
       var RandI = getRandomInt();
-      // Add a random index to the commands array
-      _this.commands.push(gameSteps[RandI]);
+
+      command = new Command(gameSteps[RandI]);
+
     }
+    _this.commands.push(command);
   };
+
   // After we have a random array, lets make sure our constants are in the right spot.
   for (var g = 0; g < constants.length; g++) {
+
     console.log("Constant step Id:"+constants[g].id);
-    _this.commands.splice(constants[g].id, 0, constants[g]);
+
+    _this.commands.splice(constants[g].id, 0, new Command(constants[g]));
   };
+  
   console.log(this.commands);
   return this.commands;
+}
+
+function Command(data) {
+  if ( !(this instanceof Command) ) {
+    return new Command(data);
+  }
+  this.init(data);
+}
+
+Command.prototype.init = function(data) {
+  this.id = data.id; // * REQUIRED * 
+
+  this.command = data.command; // * REQUIRED * Some text to be told to the commander 
+
+  this.input = data.input ? data.input : null; // The pin we should be listening to
+
+  this.location = data.location ? data.location : null; // Area of the panel
+
+  this.on = data.on ? data.on : null; // Pins that should be turned on
+
+  this.off = data.off ? data.off : null; // Pins that should be turned off
+
+  this.hint = data.hint ? data.hint : data.command;
+
+  this.success = data.success ? data.success : ''; // * REQUIRED * Success message
+
+  this.buffer = data.buffer ? data.buffer : 5; // Time before hint fires
+
+  this.time = data.time ? data.time : 10; // Time allowed to complete this command
+
+  this.failTimer = {};
+}
+
+// Create a timer that will self destruct without external interference
+Command.prototype.setFailTimer = function(func) {
+
+  var failMs = this.time * 1000;
+
+  this.failTimer = setTimeout(function() {
+    func();
+  }, failMs);
+}
+
+Command.prototype.clearFailTimer = function() {
+  return clearTimeout(this.failTimer);
 }
 
 module.exports = CommandFactory;
