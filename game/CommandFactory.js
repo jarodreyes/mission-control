@@ -5,29 +5,27 @@ var gameSteps = [
 
   {'id':3, 'location':'Fuel Control', 'command':'Booster Shutdown Did Not Complete for L3', 'on':27, 'input':3, 'hint':'Manually Release Booster L3 Only', 'buffer':5, 'time':15, 'success': 'Booster Shutdown Complete', 'failure': 'Booster L3 Failed'},
 
-  {'id':4, 'location':'Launch Engineer', 'command':'Internal Power Has Not Transferred From Buss B', 'on':null, 'input':4, 'hint':'Manually Transfer Power From Buss B Only', 'buffer':2, 'time':12, 'success': 'Internal Power Transfer Complete', 'failure': 'Internal Power failure on Buss B'},
+  {'id':9, 'location':'Launch Engineer', 'command':'Internal Power Has Not Transferred From Buss B', 'on':null, 'input':4, 'hint':'Manually Transfer Power From Buss B Only', 'buffer':2, 'time':12, 'success': 'Internal Power Transfer Complete', 'failure': 'Internal Power failure on Buss B'},
 
   {'id':10, 'location':'Launch Engineer', 'command':'Release Swing Arm', 'on':26, 'input':5, 'hint':'Swing Arm must be released', 'buffer':5, 'time':15, 'success': 'Swing Arm Released', 'failure': 'Failed to release Swing Arm'},
 
   {'id':7, 'location':'Guidance', 'command':'Guidance Control #2 Did Not Release', 'on':26, 'input':7, 'hint':'Manually Release Guidance Control #2', 'buffer':5, 'time':15, 'success': 'Guidance Control Released', 'failure': 'Failed to Release Guidance Control'},
 
   {'id':8, 'location':'Guidance', 'command':'Primary Gyroscope Not Responding', 'on':27, 'input':8, 'hint':'Increase Gyroscope Speed', 'buffer':5, 'time':20, 'success': 'Primary Gyroscope Responsive', 'failure': 'Gyroscope Failure'},
-
-  {'id':9, 'location':'Guidance', 'command':'Stand By for Rollover Sequence', 'on':30, 'input':9, 'hint':['Rollover Sequence "A" GO!','"B" GO!', '"C" GO!', '"D" GO!', 'E" GO!', '"F" GO!'], 'buffer':5, 'time':13, 'success': 'Rollover Successful', 'failure': 'Rollover Sequence Failed'}, // after we need to fire 31 of
   
 ]
 
 var constants = [
-  {'id':0, 'success':'Shuttle Launch in T-40 Seconds!', 'on':[25, 26, 27, 29, 30, 32], 'input':null},
+  {'id':0, 'location':'Commander', 'success':'Shuttle Launch in T-40 Seconds!', 'on':[25, 26, 27, 29, 30, 32], 'input':null, 'buffer': 5},
 
-  {'id':5, 'location':'Launch Engineer', 'command': 'Stand By For Booster Ignition Sequence', 'on':29, 'input':6, 'buffer': 5, 'time':15, 'hint':['Booster Ignition One GO!','Two GO!', 'Three GO!', 'Four GO!', 'Five GO!', 'Six GO!'], 'success': 'Ignition Sequence Successful', 'failure': 'Booster Ignition Failed'},
+  {'id':4, 'location':'Launch Engineer', 'command': 'Stand By For Booster Ignition Sequence', 'on':29, 'input':6, 'buffer': 5, 'time':15, 'hint':['Booster Ignition One GO!','Two GO!', 'Three GO!', 'Four GO!', 'Five GO!', 'Six GO!'], 'success': 'Ignition Sequence Successful', 'failure': 'Booster Ignition Failed'},
 
-  {'id':6, 'location':'Commander', 'command':'Stand By To Launch', 'on':29, 'input':10, 'hint':'Launch Now!', 'buffer':5, 'time':7, 'success': 'Launch Successful', 'failure': 'Failed to Launch'}, // before we need to fire 31 and after we need to fire 28
-  {'id':11, 'command': 'Shuttle Approaching Apogee', 'off':[25, 26, 27, 28, 29, 30, 32], 'hint':'Space Shuttle Is Now In Orbit. Congratulations!', 'buffer':5, 'time':6, 'success': 'Launch Sequence Successful'},
+  {'id':5, 'location':'Commander', 'command':'Stand By To Launch', 'on':[31,29], 'input':10, 'hint':'Launch Now!', 'buffer':5, 'time':7, 'success': 'Launch Successful', 'failure': 'Failed to Launch'},
+  {'id':6, 'location':'Guidance', 'command':'Stand By for Rollover Sequence', 'on':30, 'off':31, 'input':9, 'hint':['Rollover Sequence "A" GO!','"B" GO!', '"C" GO!', '"D" GO!', 'E" GO!', '"F" GO!'], 'buffer':5, 'time':13, 'success': 'Rollover Successful', 'failure': 'Rollover Sequence Failed'}, // after we need to fire 31 of
+  {'id':11, 'location':'Commander', 'command': 'Shuttle Approaching Apogee', 'off':[25, 26, 27, 28, 29, 30, 32], 'hint':'Space Shuttle Is Now In Orbit. Congratulations!', 'buffer':5, 'time':60, 'success': 'Launch Sequence Successful'},
 ]
-var gameOrder = [1, 4, 5, 2, 6, 3, 0, 7];
-var RANDOM = false;
-var eyes = [];
+var gameOrder = [1, 4, 5, 3, 6, 0, 2];
+var RANDOM = true;
 
 function CommandFactory() {
   if ( !(this instanceof CommandFactory) ) {
@@ -40,18 +38,27 @@ CommandFactory.prototype.init = function() {
   this.commands = [];
 }
 
-function getRandomInt() {
-  var RandI = Math.floor(Math.random() * gameSteps.length);
-  if (eyes.indexOf(RandI) == -1) {
-    eyes.push(RandI);
-    return RandI;
-  } else {
-    getRandomInt();
+function getRandomIntArray(ri) {
+  var eyes = [];
+  while (eyes.length < gameSteps.length){
+    var rn = Math.floor(Math.random()*gameSteps.length)
+    var present = false;
+    for (var i=0; i<eyes.length; i++) {
+      if(eyes[i]==rn) { present = true; break }
+    }
+    if(!present) {
+      eyes[eyes.length] = rn;
+      console.log(eyes);
+    }
+
   }
+  return eyes;
 }
 
 CommandFactory.prototype.getCommands = function() {
   _this = this;
+  // Get a unique random index
+  var randArray = getRandomIntArray();
   for (var i = 0; i < gameOrder.length; i++) {
     var command = {};
 
@@ -61,10 +68,8 @@ CommandFactory.prototype.getCommands = function() {
 
     } else {
 
-      // Get a unique random index
-      var RandI = getRandomInt();
-
-      command = new Command(gameSteps[RandI]);
+      command = new Command(gameSteps[randArray[i]]);
+      console.log("Randi ="+randArray[i]);
 
     }
     _this.commands.push(command);
@@ -124,11 +129,15 @@ Command.prototype.setActive = function() {
   return this;
 }
 
+Command.prototype.deactivate = function() {
+  this.active = false;
+  return this;
+}
+
 // Create a timer that will self destruct without external interference
 Command.prototype.setFailTimer = function(func) {
 
   var failMs = this.time * 1000;
-  debugger;
   this.failTimer = setTimeout(function() {
     func();
   }, failMs);

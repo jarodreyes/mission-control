@@ -3,17 +3,17 @@ var five = require("johnny-five");
 // Tested reading from analog pins A1 - A11
 var pinVolts = [
   0, // 0
-  949, // Pin 1
-  1023, // Pin 2 is broken, 1023 when Decreased
-  1023, // Pin 3
-  1023, // Pin 4
-  0, // Pin 5 is borked 1023, no change
+  949, // Pin 1 - Fuel Cells 1, 4, and 5 Only
+  900, // Pin 2 - Increase Hydrogen Pressure
+  900, // Pin 3 - Booster L3
+  900, // Pin 4 - From Buss B
+  900, // Pin 5 Release Swing Arm
   967, // Pin 6
-  1023, // Pin 7
-  1023, // Pin 8 when user Grounds it
+  900, // Pin 7
+  950, // Pin 8 when user Grounds it
   967, // Pin 9
-  1020, // Pin 10 should have less than 1023
-  -1, // Pin 11 953, 1023
+  1001, // Pin 10 should have less than 1023
+  900, // Pin 11 953, 1023
 ]
 
 var connectBoard = function(station, board) {
@@ -23,6 +23,7 @@ var connectBoard = function(station, board) {
     // Once the board is connected, notify the commander that we're ready.
     station.socket.emit('stationJoined', {'stationId': station.id});
     station.ready = true;
+    this.samplingInterval(100);
 
     // For Testing, passes the led & socket objects to the REPL
     this.repl.inject({
@@ -33,7 +34,13 @@ var connectBoard = function(station, board) {
       var vRead = pinVolts[i] || vRead;
       board.analogRead(i, function(voltage) {
         // console.log("Pin"+i+"Voltage is: "+voltage);
-        if (voltage == vRead) {
+        if (i == 10) {
+          if (voltage < vRead ) {
+            station.checkInput(i);
+            console.log("Pin"+i+"Voltage is: "+voltage);
+          }
+        }
+        if (voltage >= vRead && i != 10) {
           station.checkInput(i);
           console.log("Pin"+i+"Voltage is: "+voltage);
         }
@@ -51,20 +58,22 @@ var connectBoard = function(station, board) {
       }
     }
 
-    function processPinFlash(pinObject) {
-      if (pinObject instanceof Array) {
-        for (var i = pinObject.length - 1; i >= 0; i--) {
-          var timey = setInterval(function() {
-            var led = new five.Led(pinObject[i]);
-          }, 500);
-          setTimeout(function() {
-            clearInterval(timey);
-          }, station.getCurrentCommand().time * 1000);
-        };
-      } else {
-        var led = new five.Led(pinObject);
-        led.strobe();
+    function processPinFlash(pinObject, command) {
+      var time = command.time ? command.time * 1000 : 10000;
+      function flash() {
+        ardy.digitalWrite(pinObject, 1);
+
+        ardy.wait(250, function() {
+          // Turn it off...
+          this.digitalWrite(pinObject, 0);
+        });
       }
+      var timey = setInterval(function() {
+        flash();
+      }, 500);
+      setTimeout(function() {
+        clearInterval(timey);
+      }, time);
     }
 
     function processWiringCommands(command) {
@@ -74,7 +83,7 @@ var connectBoard = function(station, board) {
       }
       if (command.flash != undefined) {
         console.log('Pin'+command.flash+" Flashing!");
-        processPinIO(command.flash);
+        processPinIO(command.flash, command);
       }
       if (command.on != undefined) {
         console.log('Pin'+command.on+" On!");
@@ -111,6 +120,34 @@ var connectBoard = function(station, board) {
       var command = station.getCommand(data.cid);
       if (command.command == cmd || command.success == cmd) {
         processWiringCommands(command);
+      }
+
+      // on game misses show the red light for 2 seconds
+      if (data.type == "failure") {
+        ardy.digitalWrite(22, 1);
+        setTimeout(function() {
+          ardy.digitalWrite(22, 0);
+        }, 2000);
+      }
+
+      // on game successes show the blue light for 2 seconds
+      if (data.type == "success") {
+        ardy.digitalWrite(24, 1);
+        setTimeout(function() {
+          ardy.digitalWrite(24, 0);
+        }, 2000);
+      }
+    });
+
+    station.socket.on('end_game', function(data) {
+      if (station.id == data.won) {
+        ardy.digitalWrite(23, 1);
+        ardy.processPinFlash(24);
+      }
+
+      if (station.id == data.lost) {
+        ardy.digitalWrite(21, 1);
+        ardy.processPinFlash(22);
       }
     });
     

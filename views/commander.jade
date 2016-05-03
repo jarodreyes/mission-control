@@ -7,6 +7,9 @@ html
     script(src='/socket.io/socket.io.js')
     script(src='/jquery/jquery.js')
   body(class=typeof cssBody === 'undefined' ? 'property-page' : '')
+    div#overlay
+      div.modal
+        p Mission Failed
     ul#commands
     script.
       var id = "#{station}";
@@ -16,7 +19,32 @@ html
         socket.emit('commanderJoined', {'station': id})
       });
 
-      socket.on("station"+id, function(data){
+      socket.on('message', function(msg) {
+        $('#commands').append($('<li>').text(msg));
+      })
+
+      socket.on('game_start', function() {
+        $('#overlay').removeClass('show');
+        $('#commands').empty();
+      });
+
+      socket.on('station_removed'+id, function(msg) {
+        $("#overlay .modal p").text(msg);
+        $("#overlay").addClass('show');
+      });
+
+      socket.on('end_game', function(data) {
+        if (id == data.won) {
+          $("#overlay").addClass('success').find('.modal p').text("Congratulations Technicians!");
+          $("#overlay .modal").append($('<span>').text('This Station demonstrated superb communication and executed shuttle launch with the least errors or misses.'));
+        } else {
+          $("#overlay .modal p").text("Station "+data.won+" out performed your team. You scored "+data.points+" with "+data.misses+" mis-fires.");
+          $("#overlay .modal").append($('<span>').text('Onward!'));
+        }
+        $("#overlay").addClass('show');
+      });
+
+      socket.on("station"+id, function(data) {
         var msg = data.msg;
         var type = data.type;
         var cid = data.cid;
@@ -26,20 +54,12 @@ html
           $('#commands').append($("<li data-id='"+cid+"' class='error current'>").text(msg));
           $("li[data-id='"+cid+"']").append('<div class="progressBar"><div></div></div>');
           progress(data.timeLeft, data.timeLeft, cid);
+        } else if (type == "failure") {
+          $('#commands').append($('<li class="failure">').text(msg));
         } else {
           $('#commands').append($('<li>').text(msg));
         }
         $("html, body").animate({ scrollTop: $(document).height() }, 500);
-      });
-
-      socket.on("command", function(msg){
-        switch (msg) {
-          case 'reset':
-            $('#commands').empty();
-            break;
-          default:
-            $('#commands').append($('<li>').text(msg));
-        }
       });
 
       function progress(timeleft, timetotal, cid) {

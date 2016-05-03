@@ -12,7 +12,7 @@ var io = require('socket.io')(http);
 // Constants
 STATION_COUNT = 1;
 CURRENT_STEP = 0;
-STATIONS_READY = 0;
+STATIONS_READY = 1;
 COMMANDERS_READY = 0;
 
 // Serve Static Assets
@@ -42,10 +42,19 @@ io.on('connection', function(socket) {
     io.emit('next_question', {'station': data.station});
   });
 
+  socket.on('end_game', function(data) {
+    var stations = processWinners();
+    io.emit('end_game', {'won':stations.winner, 'lost':stations.loser, 'totalPoints':stations.points, 'points':data.points, 'misses':data.misses});
+  })
+
   socket.on('commanderJoined', function(data){
     COMMANDERS_READY++;
     console.log('SOCKET.IO commanders added: '+ data.station + 'for socket' + socket.id);
     tryToStartGame();
+  });
+
+  socket.on('station_removed', function(data) {
+    io.emit('station_removed'+data.station, 'Failure! Station Removed from Cluster');
   });
 
   socket.on('stationJoined', function(data) {
@@ -54,14 +63,18 @@ io.on('connection', function(socket) {
     tryToStartGame();
   });
 
+  socket.on('game_reset', function() {
+    Stations.resetGame();
+  })
+
   function tryToStartGame() {
     if (Stations.getStationCount() == STATIONS_READY && Stations.getStationCount() == COMMANDERS_READY) {
       // start game!
       console.log('startGame');
 
       // reset the clients
-      io.emit('command', 'reset');
-      io.emit('command', 'Technicians Ready');
+      io.emit('game_start');
+      io.emit('message', 'Technicians Ready');
 
       // start the command units
       setTimeout(function() {
@@ -69,6 +82,11 @@ io.on('connection', function(socket) {
       }, 2000);
       
     }
+  }
+
+  function processWinners() {
+    var data = Stations.getScore();
+    return {'winner': data.winner, 'loser':data.loser}
   }
 
   // // launch a new game
