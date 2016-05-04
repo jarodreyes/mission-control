@@ -3,15 +3,15 @@ var five = require("johnny-five");
 // Tested reading from analog pins A1 - A11
 var pinVolts = [
   0, // 0
-  949, // Pin 1 - Fuel Cells 1, 4, and 5 Only
+  900, // Pin 1 - Fuel Cells 1, 4, and 5 Only
   900, // Pin 2 - Increase Hydrogen Pressure
   900, // Pin 3 - Booster L3
   900, // Pin 4 - From Buss B
   900, // Pin 5 Release Swing Arm
-  967, // Pin 6
-  900, // Pin 7
+  900, // Pin 6 Booster Ignition
+  900, // Pin 7 Guidance Control #2 
   950, // Pin 8 when user Grounds it
-  967, // Pin 9
+  967, // Pin 9 Rollover
   1001, // Pin 10 should have less than 1023
   900, // Pin 11 953, 1023
 ]
@@ -22,7 +22,6 @@ var connectBoard = function(station, board) {
     var ardy = this;
     // Once the board is connected, notify the commander that we're ready.
     station.socket.emit('stationJoined', {'stationId': station.id});
-    station.ready = true;
     this.samplingInterval(100);
 
     // For Testing, passes the led & socket objects to the REPL
@@ -34,15 +33,21 @@ var connectBoard = function(station, board) {
       var vRead = pinVolts[i] || vRead;
       board.analogRead(i, function(voltage) {
         // console.log("Pin"+i+"Voltage is: "+voltage);
-        if (i == 10) {
-          if (voltage < vRead ) {
-            station.checkInput(i);
-            console.log("Pin"+i+"Voltage is: "+voltage);
+        if (!station.standby) {
+          if (i == 10) {
+            if (voltage < vRead ) {
+              station.checkInput(i);
+              // console.log("Pin"+i+"Voltage is: "+voltage);
+            }
           }
         }
         if (voltage >= vRead && i != 10) {
           station.checkInput(i);
-          console.log("Pin"+i+"Voltage is: "+voltage);
+          // console.log("Pin"+i+"Voltage is: "+voltage);
+          if (station.standby) {
+            console.log("Reset Triggered by "+i);
+            station.socket.emit('game_reset');
+          }
         }
       });
     }
@@ -59,13 +64,15 @@ var connectBoard = function(station, board) {
     }
 
     function processPinFlash(pinObject, command) {
-      var time = command.time ? command.time * 1000 : 10000;
+      if (command) {
+        var time = command.time ? command.time * 1000 : 10000;
+      }
       function flash() {
         ardy.digitalWrite(pinObject, 1);
 
         ardy.wait(250, function() {
           // Turn it off...
-          this.digitalWrite(pinObject, 0);
+          ardy.digitalWrite(pinObject, 0);
         });
       }
       var timey = setInterval(function() {
@@ -100,8 +107,8 @@ var connectBoard = function(station, board) {
     addInput(this, 7);
     addInput(this, 8);
     addInput(this, 9);
-    addInput(this, 10);
-    addInput(this, 11);
+    // addInput(this, 10);
+    // addInput(this, 11);
     this.pinMode(21, five.Pin.OUTPUT);
     this.pinMode(22, five.Pin.OUTPUT);
     this.pinMode(23, five.Pin.OUTPUT);
@@ -139,15 +146,15 @@ var connectBoard = function(station, board) {
       }
     });
 
-    station.socket.on('end_game', function(data) {
+    station.socket.on('game_finished', function(data) {
       if (station.id == data.won) {
         ardy.digitalWrite(23, 1);
-        ardy.processPinFlash(24);
+        processPinFlash(24);
       }
 
       if (station.id == data.lost) {
         ardy.digitalWrite(21, 1);
-        ardy.processPinFlash(22);
+        processPinFlash(22);
       }
     });
     

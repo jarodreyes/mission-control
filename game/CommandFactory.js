@@ -3,13 +3,11 @@ var gameSteps = [
 
   {'id':2, 'location':'Fuel Control', 'command':'Hydrogen Pressure Low', 'on':25, 'input':2, 'hint':'Increase Hydrogen Pressure', 'buffer':6, 'time':20, 'success': 'Hydrogen Pressure at Maximum', 'failure': 'Failed to Increase Hydrogen Pressure'},
 
-  {'id':3, 'location':'Fuel Control', 'command':'Booster Shutdown Did Not Complete for L3', 'on':27, 'input':3, 'hint':'Manually Release Booster L3 Only', 'buffer':5, 'time':15, 'success': 'Booster Shutdown Complete', 'failure': 'Booster L3 Failed'},
-
   {'id':9, 'location':'Launch Engineer', 'command':'Internal Power Has Not Transferred From Buss B', 'on':null, 'input':4, 'hint':'Manually Transfer Power From Buss B Only', 'buffer':2, 'time':12, 'success': 'Internal Power Transfer Complete', 'failure': 'Internal Power failure on Buss B'},
 
   {'id':10, 'location':'Launch Engineer', 'command':'Release Swing Arm', 'on':26, 'input':5, 'hint':'Swing Arm must be released', 'buffer':5, 'time':15, 'success': 'Swing Arm Released', 'failure': 'Failed to release Swing Arm'},
 
-  {'id':7, 'location':'Guidance', 'command':'Guidance Control #2 Did Not Release', 'on':26, 'input':7, 'hint':'Manually Release Guidance Control #2', 'buffer':5, 'time':15, 'success': 'Guidance Control Released', 'failure': 'Failed to Release Guidance Control'},
+  {'id':3, 'location':'Guidance', 'command':'Guidance Control #2 Did Not Release', 'on':26, 'input':7, 'hint':'Manually Release Guidance Control #2', 'buffer':5, 'time':15, 'success': 'Guidance Control Released', 'failure': 'Failed to Release Guidance Control'},
 
   {'id':8, 'location':'Guidance', 'command':'Primary Gyroscope Not Responding', 'on':27, 'input':8, 'hint':'Increase Gyroscope Speed', 'buffer':5, 'time':20, 'success': 'Primary Gyroscope Responsive', 'failure': 'Gyroscope Failure'},
   
@@ -22,9 +20,10 @@ var constants = [
 
   {'id':5, 'location':'Commander', 'command':'Stand By To Launch', 'on':[31,29], 'input':10, 'hint':'Launch Now!', 'buffer':5, 'time':7, 'success': 'Launch Successful', 'failure': 'Failed to Launch'},
   {'id':6, 'location':'Guidance', 'command':'Stand By for Rollover Sequence', 'on':30, 'off':31, 'input':9, 'hint':['Rollover Sequence "A" GO!','"B" GO!', '"C" GO!', '"D" GO!', 'E" GO!', '"F" GO!'], 'buffer':5, 'time':13, 'success': 'Rollover Successful', 'failure': 'Rollover Sequence Failed'}, // after we need to fire 31 of
+  {'id':7, 'location':'Fuel Control', 'command':'Booster Shutdown Did Not Complete for L3', 'on':27, 'input':3, 'hint':'Manually Release Booster L3 Only', 'buffer':5, 'time':15, 'success': 'Booster Shutdown Complete', 'failure': 'Booster L3 Failed'},
   {'id':11, 'location':'Commander', 'command': 'Shuttle Approaching Apogee', 'off':[25, 26, 27, 28, 29, 30, 32], 'hint':'Space Shuttle Is Now In Orbit. Congratulations!', 'buffer':5, 'time':60, 'success': 'Launch Sequence Successful'},
 ]
-var gameOrder = [1, 4, 5, 3, 6, 0, 2];
+var gameOrder = [1, 4, 5, 3, 0, 2];
 var RANDOM = true;
 
 function CommandFactory() {
@@ -48,7 +47,6 @@ function getRandomIntArray(ri) {
     }
     if(!present) {
       eyes[eyes.length] = rn;
-      console.log(eyes);
     }
 
   }
@@ -69,7 +67,6 @@ CommandFactory.prototype.getCommands = function() {
     } else {
 
       command = new Command(gameSteps[randArray[i]]);
-      console.log("Randi ="+randArray[i]);
 
     }
     _this.commands.push(command);
@@ -78,12 +75,9 @@ CommandFactory.prototype.getCommands = function() {
   // After we have a random array, lets make sure our constants are in the right spot.
   for (var g = 0; g < constants.length; g++) {
 
-    console.log("Constant step Id:"+constants[g].id);
-
     _this.commands.splice(constants[g].id, 0, new Command(constants[g]));
   };
   
-  console.log(this.commands);
   return this.commands;
 }
 

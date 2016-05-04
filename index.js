@@ -11,9 +11,11 @@ var io = require('socket.io')(http);
 
 // Constants
 STATION_COUNT = 1;
-CURRENT_STEP = 0;
-STATIONS_READY = 1;
+STATIONS_READY = 0;
 COMMANDERS_READY = 0;
+STATIONS_FINISHED = 0;
+STATIONS_REMOVED = 0;
+STARTED = false;
 
 // Serve Static Assets
 app.use('/jquery', express.static(__dirname + '/node_modules/jquery/dist/'));
@@ -43,8 +45,12 @@ io.on('connection', function(socket) {
   });
 
   socket.on('end_game', function(data) {
-    var stations = processWinners();
-    io.emit('end_game', {'won':stations.winner, 'lost':stations.loser, 'totalPoints':stations.points, 'points':data.points, 'misses':data.misses});
+    STATIONS_FINISHED++;
+    io.emit('end_game', {'points':data.points, 'misses':data.misses});
+    if (Stations.getStationCount() == STATIONS_FINISHED) {
+      var stations = processWinners();
+      io.emit('game_finished', {'won':stations.winner, 'lost':stations.loser, 'totalPoints':stations.points});
+    }
   })
 
   socket.on('commanderJoined', function(data){
@@ -54,7 +60,12 @@ io.on('connection', function(socket) {
   });
 
   socket.on('station_removed', function(data) {
+    STATIONS_FINISHED++;
     io.emit('station_removed'+data.station, 'Failure! Station Removed from Cluster');
+    if (Stations.getStationCount() == STATIONS_FINISHED) {
+      var stations = processWinners();
+      io.emit('game_finished', {'won':stations.winner, 'lost':stations.loser, 'totalPoints':stations.points});
+    }
   });
 
   socket.on('stationJoined', function(data) {
@@ -64,23 +75,28 @@ io.on('connection', function(socket) {
   });
 
   socket.on('game_reset', function() {
-    Stations.resetGame();
-  })
+    resetGame();
+  });
 
   function tryToStartGame() {
-    if (Stations.getStationCount() == STATIONS_READY && Stations.getStationCount() == COMMANDERS_READY) {
-      // start game!
-      console.log('startGame');
+    if (!STARTED) {
+      console.log(Stations.getStationCount()+"Station REady: "+STATIONS_READY+" Commanders Ready: "+COMMANDERS_READY);
+      if (Stations.getStationCount() == STATIONS_READY && Stations.getStationCount() == COMMANDERS_READY) {
+        // start game!
+        STARTED = true;
+        STATIONS_FINISHED = 0;
+        console.log('startGame $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ ONLY ONCE!');
 
-      // reset the clients
-      io.emit('game_start');
-      io.emit('message', 'Technicians Ready');
+        // reset the clients
+        io.emit('game_start');
+        io.emit('message', 'Technicians Ready');
 
-      // start the command units
-      setTimeout(function() {
-        Stations.startGame();
-      }, 2000);
-      
+        // start the command units
+        setTimeout(function() {
+          Stations.startGame();
+        }, 2000);
+        
+      }
     }
   }
 
@@ -93,5 +109,15 @@ io.on('connection', function(socket) {
   // var game = new Game({"socket": io});
   // game.launch();
 });
-var s = Stations.resetGame();
+
+var resetGame = function() {
+  Stations.init();
+  Stations.newGame();
+}
+
+setTimeout(function() {
+  resetGame();
+},120000);
+
+var s = Stations.newGame();
 
