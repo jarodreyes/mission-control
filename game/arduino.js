@@ -17,7 +17,6 @@ var pinVolts = [
 ]
 
 var connectBoard = function(station, board) {
-  debugger;
   if (board.isConnected && board.isReady) {
     prepareInputs(station, board);
   } else {
