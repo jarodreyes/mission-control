@@ -9,18 +9,18 @@ var gameSteps = [
 
   {'id':3, 'location':'Guidance', 'command':'Guidance Control #2 Did Not Release', 'on':26, 'input':7, 'hint':'Manually Release Guidance Control #2', 'buffer':5, 'time':15, 'success': 'Guidance Control Released', 'failure': 'Failed to Release Guidance Control'},
 
-  {'id':8, 'location':'Guidance', 'command':'Primary Gyroscope Not Responding', 'on':27, 'input':8, 'hint':'Increase Gyroscope Speed', 'buffer':5, 'time':20, 'success': 'Primary Gyroscope Responsive', 'failure': 'Gyroscope Failure'},
+  {'id':8, 'location':'Guidance', 'command':'Primary Gyroscope Not Responding', 'on':27, 'input':8, 'hint':'Increase Gyroscope Speed', 'buffer':5, 'time':10, 'success': 'Primary Gyroscope Responsive', 'failure': 'Gyroscope Failure'},
   
 ]
 
 var constants = [
   {'id':0, 'location':'Commander', 'success':'Shuttle Launch in T-40 Seconds!', 'on':[25, 26, 27, 29, 30, 32], 'input':null, 'buffer': 5},
 
-  {'id':4, 'location':'Launch Engineer', 'command': 'Stand By For Booster Ignition Sequence', 'on':29, 'input':6, 'buffer': 5, 'time':15, 'hint':['Booster Ignition One GO!','Two GO!', 'Three GO!', 'Four GO!', 'Five GO!', 'Six GO!'], 'success': 'Ignition Sequence Successful', 'failure': 'Booster Ignition Failed'},
+  {'id':4, 'location':'Launch Engineer', 'command': 'Stand By For Booster Ignition Sequence', 'on':29, 'input':6, 'buffer': 5, 'time':12, 'hint':['Booster Ignition One GO!','Two GO!', 'Three GO!', 'Four GO!', 'Five GO!', 'Six GO!'], 'success': 'Ignition Sequence Successful', 'failure': 'Booster Ignition Failed'},
 
   {'id':5, 'location':'Commander', 'command':'Stand By To Launch', 'on':[31,29], 'input':10, 'hint':'Launch Now!', 'buffer':5, 'time':7, 'success': 'Launch Successful', 'failure': 'Failed to Launch'},
   {'id':6, 'location':'Guidance', 'command':'Stand By for Rollover Sequence', 'on':30, 'off':31, 'input':9, 'hint':['Rollover Sequence "A" GO!','"B" GO!', '"C" GO!', '"D" GO!', 'E" GO!', '"F" GO!'], 'buffer':5, 'time':13, 'success': 'Rollover Successful', 'failure': 'Rollover Sequence Failed'}, // after we need to fire 31 of
-  {'id':7, 'location':'Fuel Control', 'command':'Booster Shutdown Did Not Complete for L3', 'on':27, 'input':3, 'hint':'Manually Release Booster L3 Only', 'buffer':5, 'time':15, 'success': 'Booster Shutdown Complete', 'failure': 'Booster L3 Failed'},
+  {'id':7, 'location':'Fuel Control', 'command':'Booster Shutdown Did Not Complete for L3', 'on':27, 'input':3, 'hint':'Manually Release Booster L3 Only', 'buffer':5, 'time':12, 'success': 'Booster Shutdown Complete', 'failure': 'Booster L3 Failed'},
   {'id':11, 'location':'Commander', 'command': 'Shuttle Approaching Apogee', 'off':[25, 26, 27, 28, 29, 30, 32], 'hint':'Space Shuttle Is Now In Orbit. Congratulations!', 'buffer':5, 'time':60, 'success': 'Launch Sequence Successful'},
 ]
 var gameOrder = [1, 4, 5, 3, 0, 2];

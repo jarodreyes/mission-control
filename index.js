@@ -8,14 +8,20 @@ var clientIo = require('socket.io-client');
 console.log(clientIo);
 
 var io = require('socket.io')(http);
+var boards = [];
 
 // Constants
+PORTS = ["/dev/cu.usbmodem1421", "/dev/cu.usbmodem1411", "/dev/cu.usbmodem1411"];
 STATION_COUNT = 1;
 STATIONS_READY = 0;
 COMMANDERS_READY = 0;
 STATIONS_FINISHED = 0;
-STATIONS_REMOVED = 0;
-STARTED = false;
+RUNNING = false;
+
+for (var i = STATION_COUNT - 1; i >= 0; i--) {
+  var board = new five.Board(PORTS[i]);
+  boards.push(board);
+};
 
 // Serve Static Assets
 app.use('/jquery', express.static(__dirname + '/node_modules/jquery/dist/'));
@@ -32,7 +38,9 @@ http.listen(3000, function(){
   console.log('listening on *:3000');
 });
 
-Stations.init();
+Stations.init(boards);
+
+
 
 io.on('connection', function(socket) {
   // Pass through commands from Stations to Screens
@@ -79,12 +87,11 @@ io.on('connection', function(socket) {
   });
 
   function tryToStartGame() {
-    if (!STARTED) {
+    if (!RUNNING) {
       console.log(Stations.getStationCount()+"Station REady: "+STATIONS_READY+" Commanders Ready: "+COMMANDERS_READY);
       if (Stations.getStationCount() == STATIONS_READY && Stations.getStationCount() == COMMANDERS_READY) {
         // start game!
-        STARTED = true;
-        STATIONS_FINISHED = 0;
+        RUNNING = true;
         console.log('startGame $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ ONLY ONCE!');
 
         // reset the clients
@@ -111,13 +118,16 @@ io.on('connection', function(socket) {
 });
 
 var resetGame = function() {
-  Stations.init();
+  RUNNING = false;
+  STATIONS_READY = 0;
+  STATIONS_FINISHED = 0;
+  Stations.init(boards);
   Stations.newGame();
 }
 
 setTimeout(function() {
   resetGame();
-},120000);
+},45000);
 
 var s = Stations.newGame();
 

@@ -7,7 +7,6 @@ var Player = require('player');
 STATION_COUNT = 1;
 DEFAULT_WAIT_TIME = 5000;
 DEFAULT_INTERVAL = 7500;
-PORTS = ["/dev/cu.usbmodem1421", "/dev/cu.usbmodem1411"];
 TIMED = false;
 FAILURES_ALLOWED = 1;
 // console.log = function(){}
@@ -23,12 +22,15 @@ function Station(id) {
   this.init(id);
 }
 
-Station.prototype.init = function(id) {
+Station.prototype.init = function(data) {
+  this.id = data.id; // * REQUIRED *
+  this.board = data.board; // * REQUIRED *
+
   this.commands = [];
   this.currentStep = 0;
   this.currentCommand = {};
   this.socket = clientIo.connect('http://localhost:3000/');
-  this.id = id; 
+
   this.createdTime = new Date().getTime();
   this.lastActiveTime = new Date().getTime();
   this.lastWinTime = 0;
@@ -36,8 +38,8 @@ Station.prototype.init = function(id) {
   this.failures = 0;
   this.completed = 0;
   this.misses = 0;
-  this.name = 'Station_' + id;
-  this.board = new five.Board(PORTS[id]);
+  this.name = 'Station_' + data.id;
+  
   this.timer = {};
   this.ready = false;
   this.player = {};
@@ -49,9 +51,6 @@ Station.prototype.init = function(id) {
 }
 
 Station.prototype.connectBoard = function() {
-  if (this.board.isConnected) {
-    this.board = ;
-  }
   var station = this;
   console.log("Station Ready? "+this.ready);
   // When board is connected lets' connect this station
@@ -118,7 +117,7 @@ Station.prototype.beginCommandSequence = function(command) {
 Station.prototype.nextCommand = function() {
   var command = this.currentCommand = this.commands[this.currentStep];
 
-  if (this.failures == FAILURES_ALLOWED) {
+  if (this.failures > FAILURES_ALLOWED) {
     this.removeStation();
     return;
   }
@@ -325,7 +324,8 @@ function Stations() {
   this.init();
 }
 
-Stations.prototype.init = function() {
+Stations.prototype.init = function(boards) {
+  this.boards = boards;
   this.stations = {};
   this.stationCount = 0; // count of total stations joined, not active stations
   this.activeStationCount = 0; // count of stations currently connected
@@ -336,7 +336,7 @@ Stations.prototype.init = function() {
 Stations.prototype.createStations = function() {
   for (var i = 0; i < STATION_COUNT; i++) {
     console.log("iterator: "+i);
-    var p = this.addStation(i + 1);
+    var p = this.addStation({'id': i+1, 'board':this.boards[i]});
   };
 }
 
