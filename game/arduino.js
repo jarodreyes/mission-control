@@ -1,4 +1,5 @@
 var five = require("johnny-five");
+RESETTING = false;
 
 // Tested reading from analog pins A1 - A11
 var pinVolts = [
@@ -42,25 +43,30 @@ var getBoardReady = function(station, board) {
 
 var prepareInputs = function(station, board) {
   var ardy = board;
+  console.log("************ STATION NAME *****************")
+  console.log(station.name);
 
   function addInput(board, i, vRead) {
     var vRead = pinVolts[i] || vRead;
     board.analogRead(i, function(voltage) {
-      // console.log("Pin"+i+"Voltage is: "+voltage);
-      if (!station.standby) {
-        if (i == 10) {
-          if (voltage < vRead ) {
-            station.checkInput(i);
-            // console.log("Pin"+i+"Voltage is: "+voltage);
+      if (!RESETTING) {
+          // console.log("Pin"+i+"Voltage is: "+voltage);
+        if (!station.getStandby()) {
+          if (i == 10) {
+            if (voltage < vRead ) {
+              station.checkInput(i);
+              // console.log("Pin"+i+"Voltage is: "+voltage);
+            }
           }
         }
-      }
-      if (voltage >= vRead && i != 10) {
-        station.checkInput(i);
-        // console.log("Pin"+i+"Voltage is: "+voltage);
-        if (station.standby) {
-          console.log("Reset Triggered by "+i);
-          station.socket.emit('game_reset');
+        if (voltage >= vRead && i != 10) {
+          station.checkInput(i);
+          // console.log("Pin"+i+"Voltage is: "+voltage);
+          if (station.getStandby()) {
+            console.log("Reset Triggered by "+i);
+            RESETTING = true;
+            station.socket.emit('game_reset');
+          }
         }
       }
     });
@@ -121,8 +127,8 @@ var prepareInputs = function(station, board) {
   addInput(ardy, 7);
   addInput(ardy, 8);
   addInput(ardy, 9);
-  // addInput(ardy, 10);
-  // addInput(ardy, 11);
+  addInput(ardy, 10);
+  addInput(ardy, 11);
   ardy.pinMode(21, five.Pin.OUTPUT);
   ardy.pinMode(22, five.Pin.OUTPUT);
   ardy.pinMode(23, five.Pin.OUTPUT);
@@ -171,6 +177,10 @@ var prepareInputs = function(station, board) {
       processPinFlash(22);
     }
   });
+
+  station.socket.on('game_start', function() {
+    RESETTING = false;
+  }) 
 
   /* Important!!!
     This is how we start the game 

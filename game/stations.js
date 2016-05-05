@@ -4,6 +4,16 @@ var CommandFactory = require('./CommandFactory');
 var arduino = require('./arduino');
 var Player = require('player');
 
+function makeId() {
+    var text = "";
+    var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+    for( var i=0; i < 5; i++ )
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+    return text;
+}
+
 STATION_COUNT = 1;
 DEFAULT_WAIT_TIME = 5000;
 DEFAULT_INTERVAL = 7500;
@@ -38,7 +48,7 @@ Station.prototype.init = function(data) {
   this.failures = 0;
   this.completed = 0;
   this.misses = 0;
-  this.name = 'Station_' + data.id;
+  this.name = makeId() + data.id;
   
   this.timer = {};
   this.ready = false;
@@ -116,7 +126,8 @@ Station.prototype.beginCommandSequence = function(command) {
 
 Station.prototype.nextCommand = function() {
   var command = this.currentCommand = this.commands[this.currentStep];
-
+  console.log("****************************************************");
+  console.log("FAILURES/ALLOWED "+this.failures+"/"+FAILURES_ALLOWED);
   if (this.failures > FAILURES_ALLOWED) {
     this.removeStation();
     return;
@@ -228,6 +239,10 @@ Station.prototype.getCompleted = function() {
   return this.completed;
 }
 
+Station.prototype.getStandby = function() {
+  return this.standby;
+}
+
 Station.prototype.startGame = function() {
   var CF = new CommandFactory();
   var station = this;
@@ -247,6 +262,7 @@ Station.prototype.startGame = function() {
     }
   });
 }
+
 Station.prototype.stopAllAudio = function() {
   this.player.stop();
   this.playerFail.stop();
@@ -335,7 +351,8 @@ Stations.prototype.init = function(boards) {
 // Setup 4 stations for our game
 Stations.prototype.createStations = function() {
   for (var i = 0; i < STATION_COUNT; i++) {
-    console.log("iterator: "+i);
+    console.log("****************** SHOULD NOT HAPPEN MORE THAN ONCE ******************")
+    console.log("CREATING STATION: "+i);
     var p = this.addStation({'id': i+1, 'board':this.boards[i]});
   };
 }
@@ -399,8 +416,8 @@ Stations.prototype.getScore = function() {
   for (var stationId in this.stations) {
     var stationPoints = this.getStationPoints(stationId);
     var stationMissed = this.getStationMisses(stationId) + stationPoints;
-    winner = stationPoints > pointStache ? stationId : winner;
-    loser = (stationId > winner) && (stationPoints < pointStache) ? stationId : loser;
+    winner = stationPoints > pointStache ? this.stations[stationId].id : winner;
+    loser = (stationId > winner) && (stationPoints < pointStache) ? this.stations[stationId].id : loser;
     pointStache = stationPoints > pointStache ? stationPoints : pointStache;
     missed = stationMissed < missed ? stationMissed : missed;
   }

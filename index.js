@@ -101,7 +101,7 @@ io.on('connection', function(socket) {
         // start the command units
         setTimeout(function() {
           Stations.startGame();
-        }, 2000);
+        }, 100);
         
       }
     }
@@ -124,10 +124,6 @@ var resetGame = function() {
   Stations.init(boards);
   Stations.newGame();
 }
-
-setTimeout(function() {
-  resetGame();
-},45000);
 
 var s = Stations.newGame();
 
