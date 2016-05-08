@@ -13,12 +13,12 @@ html
     ul#commands
     script.
       var id = "#{station}";
-      var socket = io();
+      var socket = io('/commanders');
       var points = 0;
       var misses = 0;
 
       socket.on('connect', function() {
-        socket.emit('commanderJoined', {'station': id})
+        socket.emit('commander_joined', {'station': id})
       });
 
       socket.on('message', function(msg) {
@@ -39,7 +39,7 @@ html
         $("#overlay").addClass('show');
       });
 
-      socket.on('end_game', function(data) {
+      socket.on('end_game'+id, function(data) {
         console.log("End Game");
         points = data.points;
         missed = data.misses;
