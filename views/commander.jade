@@ -41,22 +41,25 @@ html
 
       socket.on('end_game'+id, function(data) {
         console.log("End Game");
-        points = data.points;
+        points = data.totalPoints;
         missed = data.misses;
       });
 
       socket.on('game_finished', function(data) {
+        console.log('GAME FINISHED FROM CLIENT');
         while ($("#overlay").hasClass('show')) {
           return;
         }
+        console.log(data, data.totalPoints);
         if (id == data.won) {
           $("#overlay").addClass('success').find('.modal p').text("Congratulations Technicians!");
           $("#overlay .modal").append($('<span>').text('This Station demonstrated superb communication and executed shuttle launch with the least errors or misses.'));
         } else {
-          $("#overlay .modal p").text("Station "+data.won+" out performed your team. You scored "+points+" with "+misses+" mis-fires.");
+          $("#overlay .modal p").text("Station "+data.won+" out performed your team. You scored "+data.totalPoints+".");
           $("#overlay .modal").append($('<span>').text('Onward!'));
         }
         $("#overlay").addClass('show');
+        console.log('GAME FINISHED FROM CLIENT');
       });
 
       socket.on("station"+id, function(data) {

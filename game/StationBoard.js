@@ -1,6 +1,7 @@
 var five = require("johnny-five");
 var clientIo = require('socket.io-client');
 RESETTING = false;
+DEBUG = true;
 
 var pinSettings = [
   { 
@@ -11,60 +12,57 @@ var pinSettings = [
   },
   { 
     pin: 1,
-    voltage: 900,
+    voltage: 960,
     trigger: 'Fuel Cell 5',
     voltageTrigger: 'min', // min readings should register a minimum of the voltage, so vRead >= voltage.
   },
   { 
     pin: 2,
-    voltage: 900,
+    voltage: 1023,
     trigger: 'Increase Hydrogen Pressure',
     voltageTrigger: 'min', 
   },
   { 
     pin: 3,
-    voltage: 900,
+    voltage: 1023,
     trigger: 'Booster L3',
-    voltageTrigger: 'min',
-    button: true,
+    voltageTrigger: 'min'
   },
   { 
     pin: 4,
-    voltage: 900,
+    voltage: 1023,
     trigger: 'Buss B',
     voltageTrigger: 'min',
   },
   { 
     pin: 5,
-    voltage: 900,
+    voltage: 1023,
     trigger: 'Release Swing Arm',
     voltageTrigger: 'min',
   },
   { 
     pin: 6,
-    voltage: 900,
+    voltage: 960,
     trigger: 'Booster Ignition',
     voltageTrigger: 'min',
-    button: true,
   },
   { 
     pin: 7,
-    voltage: 900,
+    voltage: 1023,
     trigger: 'Guidance Control #2',
     voltageTrigger: 'min',
   },
   { 
     pin: 8,
-    voltage: 950,
+    voltage: 1023,
     trigger: 'Gyroscope',
     voltageTrigger: 'min',
   },
   { 
     pin: 9,
-    voltage: 900,
+    voltage: 1023,
     trigger: 'Rollover Sequence',
     voltageTrigger: 'min',
-    button: true,
   },
   { 
     pin: 10,
@@ -74,7 +72,7 @@ var pinSettings = [
   },
   { 
     pin: 11,
-    voltage: 900,
+    voltage: 960,
     trigger: 'Failure Pins',
     voltageTrigger: 'min',
   }
@@ -157,34 +155,33 @@ StationBoard.prototype.setupListeners = function() {
     sb.activePins = [];
 
     for (i = 25; i < 32; i += 1) {
-      sb.processPinIO(i, 0);
+      sb.processPinIO(i, 1);
     }
-
-    console.log('GAME FINISHED');
 
     if (sb.id == data.won) {
 
-      sb.board.digitalWrite(23, 1);
+      sb.board.digitalWrite(23, 0);
 
       sb.processPinFlash(24);
     }
+    console.log('GAME FINISHED FROM ARDUINO');
   });
 
   this.socket.on('game_start', function() {
     sb.resetting = false;
     sb.standby = false;
-    sb.board.digitalWrite(21,0); // Fail Beacon
-    sb.board.digitalWrite(22,0); // Fail Light
-    sb.board.digitalWrite(23,0); // Success Beacon
-    sb.board.digitalWrite(24,0); // Success Light
+    sb.board.digitalWrite(21,1); // Fail Beacon
+    sb.board.digitalWrite(22,1); // Fail Light
+    sb.board.digitalWrite(23,1); // Success Beacon
+    sb.board.digitalWrite(24,1); // Success Light
     sb.board.digitalWrite(25,0); // Hydrogen Light
     sb.board.digitalWrite(26,0); // Swing Arm Release
     sb.board.digitalWrite(27,0); // Gryoscope 
     sb.board.digitalWrite(28,0); // Launch Button
-    sb.board.digitalWrite(29,0); // Fuel Cell
-    sb.board.digitalWrite(30,0); // Indicators
+    sb.board.digitalWrite(29,1); // Fuel Cell
+    sb.board.digitalWrite(30,1); // Indicators
     sb.board.digitalWrite(31,0); // rumble
-    sb.board.digitalWrite(32,0); // Indicators
+    sb.board.digitalWrite(32,1); // Indicators
   });
 
   /* Listen for station failure
@@ -209,7 +206,7 @@ StationBoard.prototype.getBoardReady = function() {
     // Create an arduino object to pass around
     var ardy = this;
     // Once the board is connected, notify the commander that we're ready.
-    this.samplingInterval(100);
+    this.samplingInterval(250);
 
     // For Testing, passes the led & socket objects to the REPL
     this.repl.inject({
@@ -257,19 +254,8 @@ StationBoard.prototype.addInput = function(i) {
     return v.pin === i; // Filter out the appropriate one
   })[0];
 
-  if (pin.button) {
-    var button = new five.Button({
-      pin: i,
-      isPullup: true
-    });
-
-    button.on("down", function() {
-      sb.processButton(pin);
-    });
-  } else {
-    this.board.pinMode(pin.pin, five.Pin.INPUT);
-    this.board.digitalRead(pin.pin, function(value) {
-      console.log("@@@@@@@@@@@ VOLTAGE READING @@@@@@@@@@@@ PIN "+i)
+  if (!this.inReset()) {
+    this.board.analogRead(pin.pin, function(value) {
       sb.processVoltage(pin, value);
     });
   }
@@ -292,38 +278,31 @@ StationBoard.prototype.failedCommand = function(command) {
   }, 2000);
 }
 
-StationBoard.prototype.processButton = function(pin) {
-  var sb = this;
-   // Get result and access the foo property
-  console.log(" var button = "+pin.pin);
-  console.log("@@@@@@@@@@@ BUTTON PUSHED @@@@@@@@@@@@ PIN "+i)
-  // console.log("Pin "+i+" Voltage is: "+voltage);
-  this.socket.emit('pin_fired', {station:this.id, pin:pin.pin});
-  this.setPinInactive(pin.pin);
-  if (this.inStandby()) {
-    sb.standby = false;
-    sb.resetting = true;
-    sb.socket.emit('game_reset', {station:sb.id});
-  }
-}
-
 StationBoard.prototype.processVoltage = function(pin, voltage) {
   var sb = this;
-   // Get result and access the foo property
-  console.log(" var pin = "+pin.pin);
-  console.log("Pin "+i+" Voltage is: "+voltage);
+  // console.log("@@@ PIN "+pin.pin+" @@@@@@@@ SWITCH VOLTAGE @@@@@@@@@@@@ "+voltage);
+  // Check that we aren't in standby, and then check some inputs.
   if (!sb.inStandby()) {
-    if (i == 10) {
+    if (pin.pin == 10 && sb.isPinActive(pin.pin)) {
       if (voltage < pin.voltage) {
-        sb.socket.emit('launch_fired', {station:sb.id, pin:pin});
+        sb.socket.emit('launch_fired', {station:sb.id, pin:pin.pin});
         // console.log("Pin"+i+"Voltage is: "+voltage);
       }
+    } else {
+      if (voltage >= pin.voltage && sb.isPinActive(pin.pin)) {
+        console.log("@@@ PIN "+pin.pin+" @@@@@@@@ SWITCH VOLTAGE @@@@@@@@@@@@ "+voltage);
+        sb.socket.emit('pin_fired', {station:sb.id, pin:pin.pin});
+        sb.setPinInactive(pin.pin);
+      }
     }
-  }
-  if (voltage > pin.voltage && sb.isPinActive(pin)) {
-    // console.log("Pin "+i+" Voltage is: "+voltage);
-    sb.socket.emit('pin_fired', {station:sb.id, pin:pin.pin});
-    sb.setPinInactive(pin.pin);
+  } else {
+    if (voltage >= pin.voltage) {
+      if (pin.pin == 3 || pin.pin == 4 || pin.pin == 7) {
+        sb.standby = false;
+        sb.resetting = true;
+        sb.socket.emit('game_reset', {station:sb.id});
+      }
+    }
   }
 }
 
@@ -340,7 +319,7 @@ StationBoard.prototype.processPinIO = function(pinObject, val) {
 
 StationBoard.prototype.processPinFlash = function(pinObject, command) {
   var sb = this;
-  if (command) {
+  if (command != undefined) {
     var time = command.timeLeft ? command.timeLeft * 1000 : 10000;
   }
   function flash() {
@@ -351,13 +330,16 @@ StationBoard.prototype.processPinFlash = function(pinObject, command) {
       sb.board.digitalWrite(pinObject, 0);
     });
   }
+
   var timey = setInterval(function() {
     flash();
   }, 500);
+
   setTimeout(function() {
     clearInterval(timey);
     sb.processPinIO(pinObject, 1);
   }, time);
+
 }
 
 StationBoard.prototype.processWiringCommands = function(command) {
@@ -367,7 +349,7 @@ StationBoard.prototype.processWiringCommands = function(command) {
     this.processPinIO(command.off, 1);
   }
   if (command.flashOn != undefined) {
-    console.log('Pin '+command.flash+" Flashing!");
+    console.log('Pin '+command.flashOn+" Flashing!");
     this.processPinFlash(command.flashOn, command);
   }
   if (command.on != undefined) {

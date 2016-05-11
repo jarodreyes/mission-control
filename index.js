@@ -75,6 +75,10 @@ arduinos.on('connection', function(socket) {
   socket.on('pin_fired', function(data) {
     stations.emit('station_'+data.station+'pin', data.pin);
   });
+
+  socket.on('launch_fired', function(data) {
+    stations.emit('station_'+data.station+'launch', data.pin);
+  });
 });
 
 stations.on('connection', function(socket) {
@@ -87,7 +91,6 @@ stations.on('connection', function(socket) {
   });
 
   socket.on('end_game', function(data) {
-
     STATIONS_FINISHED++;
 
     commanders.emit('end_game'+data.station, {'points':data.points, 'misses':data.misses});

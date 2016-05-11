@@ -1,7 +1,6 @@
 var five = require("johnny-five");
 var clientIo = require('socket.io-client');
 var CommandFactory = require('./CommandFactory');
-var arduino = require('./arduino');
 var Player = require('player');
 
 function makeId() {
@@ -68,7 +67,6 @@ Station.prototype.init = function(data) {
 // }
 
 Station.prototype.checkInput = function(pin) {
-  console.log("Pin Firing: "+pin);
   var station = this;
   var activeCommands = this.getActiveCommands();
   var acNum = activeCommands.length;
@@ -81,6 +79,7 @@ Station.prototype.checkInput = function(pin) {
   for (var i = activeCommands.length - 1; i >= 0; i--) {
     console.log("Active Pin "+activeCommands[i].input);
     if (activeCommands[i].input == pin) {
+      console.log("Pin Firing: "+pin);
       station.processSuccess(activeCommands[i]);
     } else {
       station.misses++;
@@ -274,9 +273,20 @@ Station.prototype.setupListeners = function() {
     } else {
       station.playerLose.play();
     }
+    console.log('GAME FINISHED FROM STATION');
+  });
+  this.socket.on('game_reset', function(data) {
+    station.stopAllAudio();
+    console.log('GAME RESET FROM STATION');
   });
 
   this.socket.on('station_'+station.id+'pin', function(pin) {
+    debugger;
+    station.checkInput(pin);
+  });
+
+  this.socket.on('station_'+station.id+'launch', function(pin) {
+    debugger;
     station.checkInput(pin);
   });
 
@@ -371,6 +381,7 @@ Stations.prototype.init = function(boards) {
 // Setup 4 stations for our game
 Stations.prototype.createStations = function(numStations) {
   for (var i = 0; i < numStations; i++) {
+    this.removeStation(this.boards[i].id);
     console.log("****************** SHOULD NOT HAPPEN MORE THAN ONCE ******************")
     console.log("CREATING STATION: "+ this.boards[i].id);
 
@@ -433,8 +444,8 @@ Stations.prototype.getScore = function() {
   // start the game for all Stations
   var pointStache = 0;
   var missed = 0;
-  var winner = 0;
-  var loser = 0;
+  var winner = 1;
+  var loser = 1;
   for (var stationId in this.stations) {
     var stationPoints = this.getStationPoints(stationId);
     var stationMissed = this.getStationMisses(stationId) + stationPoints;
