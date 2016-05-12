@@ -13,10 +13,12 @@ html
     ul#commands
     script.
       var id = "#{station}";
-      var socket = io();
+      var socket = io('/commanders');
+      var points = 0;
+      var misses = 0;
 
       socket.on('connect', function() {
-        socket.emit('commanderJoined', {'station': id})
+        socket.emit('commander_joined', {'station': id})
       });
 
       socket.on('message', function(msg) {
@@ -24,24 +26,40 @@ html
       })
 
       socket.on('game_start', function() {
-        $('#overlay').removeClass('show');
+        points = 0;
+        misses = 0;
+        $('#overlay').removeClass('show').removeClass('success');
+        $('#overlay .modal p').empty();
         $('#commands').empty();
       });
 
       socket.on('station_removed'+id, function(msg) {
+        console.log("Station Removed");
         $("#overlay .modal p").text(msg);
         $("#overlay").addClass('show');
       });
 
-      socket.on('end_game', function(data) {
+      socket.on('end_game'+id, function(data) {
+        console.log("End Game");
+        points = data.totalPoints;
+        missed = data.misses;
+      });
+
+      socket.on('game_finished', function(data) {
+        console.log('GAME FINISHED FROM CLIENT');
+        while ($("#overlay").hasClass('show')) {
+          return;
+        }
+        console.log(data, data.totalPoints);
         if (id == data.won) {
           $("#overlay").addClass('success').find('.modal p').text("Congratulations Technicians!");
           $("#overlay .modal").append($('<span>').text('This Station demonstrated superb communication and executed shuttle launch with the least errors or misses.'));
         } else {
-          $("#overlay .modal p").text("Station "+data.won+" out performed your team. You scored "+data.points+" with "+data.misses+" mis-fires.");
+          $("#overlay .modal p").text("Station "+data.won+" out performed your team. You scored "+data.totalPoints+".");
           $("#overlay .modal").append($('<span>').text('Onward!'));
         }
         $("#overlay").addClass('show');
+        console.log('GAME FINISHED FROM CLIENT');
       });
 
       socket.on("station"+id, function(data) {
@@ -57,6 +75,8 @@ html
         } else if (type == "failure") {
           $('#commands').append($('<li class="failure">').text(msg));
         } else {
+          // Look for a previous command
+          $("li[data-id='"+cid+"'] > .progressBar").remove();
           $('#commands').append($('<li>').text(msg));
         }
         $("html, body").animate({ scrollTop: $(document).height() }, 500);

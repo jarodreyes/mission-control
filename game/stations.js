@@ -1,15 +1,23 @@
 var five = require("johnny-five");
 var clientIo = require('socket.io-client');
 var CommandFactory = require('./CommandFactory');
-var arduino = require('./arduino');
 var Player = require('player');
+
+function makeId() {
+    var text = "";
+    var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+    for( var i=0; i < 5; i++ )
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+    return text;
+}
 
 STATION_COUNT = 1;
 DEFAULT_WAIT_TIME = 5000;
 DEFAULT_INTERVAL = 7500;
-PORTS = ["/dev/cu.usbmodem1421", "/dev/cu.usbmodem1411"];
 TIMED = false;
-FAILURES_ALLOWED = 6;
+FAILURES_ALLOWED = 11;
 // console.log = function(){}
 
 // ----------------------------------------- STATION ---------------------- //
@@ -17,19 +25,20 @@ FAILURES_ALLOWED = 6;
 
 // Station needs to own some things itself
 function Station(id) {
-  console.log("new Station")
   if ( !(this instanceof Station) ) {
     return new Station();
   }
   this.init(id);
 }
 
-Station.prototype.init = function(id) {
+Station.prototype.init = function(data) {
+  this.id = data.id; // * REQUIRED *
+
   this.commands = [];
   this.currentStep = 0;
   this.currentCommand = {};
-  this.socket = clientIo.connect('http://localhost:3000/');
-  this.id = id; 
+  this.socket = clientIo.connect('http://localhost:3000/stations');
+
   this.createdTime = new Date().getTime();
   this.lastActiveTime = new Date().getTime();
   this.lastWinTime = 0;
@@ -37,26 +46,19 @@ Station.prototype.init = function(id) {
   this.failures = 0;
   this.completed = 0;
   this.misses = 0;
-  this.name = 'Station_' + id;
-  this.board = new five.Board(PORTS[id]);
+  this.name = makeId() + data.id;
+  
   this.timer = {};
-  this.connectBoard();
   this.ready = false;
   this.player = {};
   this.playerFail = {};
   this.playerSuccess = {};
   this.failing = false;
-}
-
-Station.prototype.connectBoard = function() {
-  var station = this;
-  console.log("Station Ready? "+this.ready);
-  // When board is connected lets' connect this station
-  arduino.connectBoard(station, this.board);
+  this.standby = false;
+  this.setupListeners();
 }
 
 Station.prototype.checkInput = function(pin) {
-  console.log("Pin Firing: "+pin);
   var station = this;
   var activeCommands = this.getActiveCommands();
   var acNum = activeCommands.length;
@@ -69,6 +71,7 @@ Station.prototype.checkInput = function(pin) {
   for (var i = activeCommands.length - 1; i >= 0; i--) {
     console.log("Active Pin "+activeCommands[i].input);
     if (activeCommands[i].input == pin) {
+      console.log("Pin Firing: "+pin);
       station.processSuccess(activeCommands[i]);
     } else {
       station.misses++;
@@ -80,13 +83,14 @@ Station.prototype.checkInput = function(pin) {
 Station.prototype.beginCommandSequence = function(command) {
   var station = this;
 
+  // If this command object doesn't have a command, then let's send the success notification.
   if(command.command != undefined) {
     this.emitCommand(command);
   } else {
     this.emitSuccess(command);
   }
 
-  // No matter what we want to fire the next command soon
+  // If there isn't an input we're waiting for we can skip ahead.
   while (command.input == null) {
     setTimeout(function() {
       station.completed++;
@@ -95,6 +99,7 @@ Station.prototype.beginCommandSequence = function(command) {
     return;
   }
 
+  // Issue a new command every few seconds
   setTimeout(function() {
     station.nextCommand();
   }, DEFAULT_INTERVAL);
@@ -107,18 +112,23 @@ Station.prototype.beginCommandSequence = function(command) {
     station.processFailure(command);
   });
 
+  // Command should send a hint
   command.setHintTimer(function() {
-    station.emitHint(command)
+    station.emitHint(command);
   });
 }
 
 Station.prototype.nextCommand = function() {
+  // Setting the current command object
   var command = this.currentCommand = this.commands[this.currentStep];
 
-  while (this.failures >= FAILURES_ALLOWED) {
+  // Need to remove this station if we have too many failures
+  if (this.failures > FAILURES_ALLOWED) {
     this.removeStation();
     return;
   }
+
+  // Last step ? End Game : Next step
   if (this.currentStep == this.commands.length) {
     this.endGame();
   } else {
@@ -129,14 +139,19 @@ Station.prototype.nextCommand = function() {
 
 Station.prototype.processFailure = function(command) {
   var station = this;
+
+  // Failure can be triggered by non-command related issues, like misfires
+  // If a command object is passed let's make sure we fail it
   if (command != undefined) {
     this.emitFailure(command);
     command.deactivate();
   }
+
   this.completed++;
   this.failures++;
 
-  console.log('This Failing?: '+this.failing);
+  // Don't want to play over a sound
+  // TODO: REMOVE WHEN WE HAVE AUDIO PIECE
   if (!this.failing) {
     this.playerFail.play(function( err, player) {
       console.log("Playing Ended! "+err);
@@ -146,13 +161,16 @@ Station.prototype.processFailure = function(command) {
 }
 
 Station.prototype.processSuccess = function(command) {
+  // Stop further command actions
   command.clearHintTimer();
   command.clearFailTimer();
   command.deactivate();
+
+  // Update the station progress
   this.completed++;
   this.points += 100;
+
   this.emitSuccess(command);
-  this.socket.emit('success', {'station':this.id});
   this.playerSuccess.play(function( err, player) {
     console.log("Success Player Ended! "+err);
   });
@@ -163,31 +181,39 @@ Station.prototype.awaitingInput = function(actionStep) {
 }
 
 Station.prototype.emitSuccess = function(command) {
-  var msg = command.success;
-  var cId = command ? command.id : 0;
-  this.emitStationMsg({'station':this.id, 'msg':msg, 'type':'success', 'cid': cId})
+  this.emitStationMsg('success', command)
 }
 
 Station.prototype.emitFailure = function(command) {
-  var msg = command.failure ? command.failure : command.location+': Failed!';
-  var cId = command ? command.id : 0;
-  this.emitStationMsg({'station':this.id, 'msg':msg, 'type':'failure', 'cid': cId})
+  this.emitStationMsg('failure', command);
 }
 
 Station.prototype.emitHint = function(command) {
-  var cId = command ? command.id : 0;
-  this.emitStationMsg({'station':this.id, 'msg':command.hint, 'type':'hint', 'cid': cId})
+  this.emitStationMsg('hint', command);
 }
 
 Station.prototype.emitCommand = function(command) {
   var cId = command ? command.id : 0;
-  var timeLeft = command.time ? command.time : DEFAULT_WAIT_TIME/1000;
-  this.emitStationMsg({'station':this.id, 'msg':command.command, 'type':'command', 'timeLeft':timeLeft, 'cid': cId})
+  
+  this.emitStationMsg('command', command);
 }
 
-Station.prototype.emitStationMsg = function(data) {
+Station.prototype.emitStationMsg = function(type, command) {
+  var timeLeft = command.time ? command.time : DEFAULT_WAIT_TIME/1000;
+  data = {
+    'station':this.id, 
+    'msg':command[type],
+    'type':type,
+    'cid': command ? command.id : 0,
+    'off':command.off,
+    'flashOn':command.flashOn,
+    'toggle':command.toggle,
+    'on':command.on,
+    'timeLeft':timeLeft,
+    'flash':command.flash,
+    'input':command.input
+  }
   this.socket.emit("command", data);
-  console.log("Station Message: "+this.id+" "+data.msg);
   console.log("Station Stats - Completed:"+this.completed+" Current:"+this.currentStep+" Points:"+this.points+" Misse:"+this.misses);
 }
 
@@ -224,8 +250,11 @@ Station.prototype.deactivateAllCommands = function() {
 }
 
 Station.prototype.getCompleted = function() {
-  console.log("Completed: "+this.completed);
   return this.completed;
+}
+
+Station.prototype.getStandby = function() {
+  return this.standby;
 }
 
 Station.prototype.startGame = function() {
@@ -238,12 +267,60 @@ Station.prototype.startGame = function() {
   this.nextCommand();
 }
 
+Station.prototype.setupListeners = function() {
+  var station = this;
+
+  this.socket.on('connect', function(socket) {
+    console.log('$$$$$$$$$$ FROM STATION - STATION joined');
+  });
+
+
+  this.socket.on('game_finished', function(data) {
+
+    station.stopAllAudio();
+    station.standby = true;
+    
+    if(station.id == data.won) {
+      station.playerWin.play();
+      console.log("Won!");
+    } else {
+      station.playerLose.play();
+    }
+    
+    console.log('GAME FINISHED FROM STATION');
+  });
+  
+  this.socket.on('game_reset', function(data) {
+    station.stopAllAudio();
+    console.log('GAME RESET FROM STATION');
+  });
+
+  this.socket.on('station_'+station.id+'pin', function(pin) {
+    station.checkInput(pin);
+  });
+
+  this.socket.on('station_'+station.id+'launch', function(pin) {
+    station.checkInput(pin);
+  });
+
+  this.socket.emit('station_joined', {'stationId':station.id});
+}
+
+Station.prototype.stopAllAudio = function() {
+  this.player.stop();
+  this.playerFail.stop();
+  this.playerSuccess.stop();
+  this.playerLose.stop();
+  this.playerWin.stop();
+}
+
 Station.prototype.startAudio = function() {
   var station = this;
   this.player = new Player(__dirname + '/launch.mp3');
   this.playerFail = new Player(__dirname + '/fail.mp3');
   this.playerSuccess = new Player(__dirname + '/success.mp3');
   this.playerLose = new Player(__dirname + '/lose.mp3');
+  this.playerWin = new Player(__dirname + '/winner.mp3');
 
   // play now and callback when playend
   this.player.play();
@@ -271,6 +348,10 @@ Station.prototype.startAudio = function() {
     console.log('Player Error');
     console.log(err);
   });
+  this.playerWin.on('error', function(err) {
+    console.log('Player Error');
+    console.log(err);
+  });
 }
 
 Station.prototype.removeStation = function() {
@@ -279,20 +360,14 @@ Station.prototype.removeStation = function() {
     station.socket.emit('station_removed', {'station': station.id});
     station.playerLose.play();
   });
-  console.log('Remove Station: '+ this.id);
 }
 
 Station.prototype.endGame = function() {
   var station = this;
-  this.endSequences(function() {
-    station.playerLose.play();
-  });
-  console.log('End Game');
   this.socket.emit('end_game', {'station': this.id, 'points':this.points, 'misses':this.misses});
 }
 
 Station.prototype.endSequences = function(callback) {
-  this.player.stop();
   this.playerFail.stop();
   this.deactivateAllCommands();
   return callback();
@@ -308,18 +383,24 @@ function Stations() {
   this.init();
 }
 
-Stations.prototype.init = function() {
+Stations.prototype.init = function(boards) {
+  this.boards = boards;
   this.stations = {};
   this.stationCount = 0; // count of total stations joined, not active stations
   this.activeStationCount = 0; // count of stations currently connected
   this.winningSocket = null;
 }
 
-// Setup 4 stations for our game
-Stations.prototype.createStations = function() {
-  for (var i = 0; i < STATION_COUNT; i++) {
-    console.log("iterator: "+i);
-    var p = this.addStation(i + 1);
+Stations.prototype.createStations = function(numStations) {
+  for (var i = 0; i < numStations; i++) {
+    // Need to make sure the station and the board have identical ids for socket.io
+    var p = this.addStation({'id':this.boards[i].id});
+  };
+}
+
+Stations.prototype.deleteStations = function(numStations) {
+  for (var i = 0; i < numStations; i++) {
+    this.removeStation(i);
   };
 }
 
@@ -331,8 +412,6 @@ Stations.prototype.addStation = function(stationId) {
 
   return this.stations[station.stationId];
 }
-
-
 
 Stations.prototype.emitStationCommand = function(msg) {
   // add arduino board to station
@@ -348,9 +427,19 @@ Stations.prototype.emitCommands = function(msg) {
   return this.stations;
 }
 
-Stations.prototype.resetGame = function() {
-  this.stations = {};
-  this.createStations();
+Stations.prototype.inStandby = function(msg) {
+  // add arduino board to station
+  var inSb = 0;
+  for (var stationId in this.stations) {
+    var station = this.stations[stationId];
+    if (station.standby)inSb++;
+  }
+  return inSb == this.getStationCount();
+}
+
+Stations.prototype.newGame = function(numStations) {
+  this.deleteStations(numStations);
+  this.createStations(numStations);
   return this.stations;
 }
 
@@ -358,7 +447,6 @@ Stations.prototype.startGame = function() {
   // start the game for all Stations
   for (var stationId in this.stations) {
     var station = this.stations[stationId];
-    console.log("Station ID"+stationId);
     station.startGame();
   }
   return this.stations;
@@ -368,13 +456,13 @@ Stations.prototype.getScore = function() {
   // start the game for all Stations
   var pointStache = 0;
   var missed = 0;
-  var winner = 0;
-  var loser = 0;
+  var winner = 1;
+  var loser = 1;
   for (var stationId in this.stations) {
     var stationPoints = this.getStationPoints(stationId);
-    var stationMissed = this.getStationMissed(stationId) + stationPoints;
-    winner = stationPoints > pointStache ? stationId : winner;
-    loser = (stationId > winner) && (stationPoints < pointStache) ? stationId : loser;
+    var stationMissed = this.getStationMisses(stationId) + stationPoints;
+    winner = stationPoints > pointStache ? this.stations[stationId].id : winner;
+    loser = (stationId > winner) && (stationPoints < pointStache) ? this.stations[stationId].id : loser;
     pointStache = stationPoints > pointStache ? stationPoints : pointStache;
     missed = stationMissed < missed ? stationMissed : missed;
   }
@@ -389,8 +477,8 @@ Stations.prototype.getStation = function(stationId) {
   return this.stations[stationId];
 }
 
-Stations.prototype.getStationMissed = function(stationId) {
-  return this.stations[stationId] ? this.stations[stationId].missed : '';
+Stations.prototype.getStationMisses = function(stationId) {
+  return this.stations[stationId] ? this.stations[stationId].misses : '';
 }
 
 Stations.prototype.getStationPoints = function(stationId) {
