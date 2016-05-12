@@ -33,7 +33,6 @@ function Station(id) {
 
 Station.prototype.init = function(data) {
   this.id = data.id; // * REQUIRED *
-  // this.board = data.board; // * REQUIRED *
 
   this.commands = [];
   this.currentStep = 0;
@@ -58,13 +57,6 @@ Station.prototype.init = function(data) {
   this.standby = false;
   this.setupListeners();
 }
-
-// Station.prototype.connectBoard = function() {
-//   var station = this;
-//   console.log("Station Ready? "+this.ready);
-//   // When board is connected lets' connect this station
-//   arduino.connectBoard(station, this.board);
-// }
 
 Station.prototype.checkInput = function(pin) {
   var station = this;
@@ -91,13 +83,14 @@ Station.prototype.checkInput = function(pin) {
 Station.prototype.beginCommandSequence = function(command) {
   var station = this;
 
+  // If this command object doesn't have a command, then let's send the success notification.
   if(command.command != undefined) {
     this.emitCommand(command);
   } else {
     this.emitSuccess(command);
   }
 
-  // No matter what we want to fire the next command soon
+  // If there isn't an input we're waiting for we can skip ahead.
   while (command.input == null) {
     setTimeout(function() {
       station.completed++;
@@ -106,6 +99,7 @@ Station.prototype.beginCommandSequence = function(command) {
     return;
   }
 
+  // Issue a new command every few seconds
   setTimeout(function() {
     station.nextCommand();
   }, DEFAULT_INTERVAL);
@@ -118,19 +112,23 @@ Station.prototype.beginCommandSequence = function(command) {
     station.processFailure(command);
   });
 
+  // Command should send a hint
   command.setHintTimer(function() {
     station.emitHint(command);
   });
 }
 
 Station.prototype.nextCommand = function() {
+  // Setting the current command object
   var command = this.currentCommand = this.commands[this.currentStep];
-  console.log("****************************************************");
-  console.log("FAILURES/ALLOWED "+this.failures+"/"+FAILURES_ALLOWED);
+
+  // Need to remove this station if we have too many failures
   if (this.failures > FAILURES_ALLOWED) {
     this.removeStation();
     return;
   }
+
+  // Last step ? End Game : Next step
   if (this.currentStep == this.commands.length) {
     this.endGame();
   } else {
@@ -141,13 +139,19 @@ Station.prototype.nextCommand = function() {
 
 Station.prototype.processFailure = function(command) {
   var station = this;
+
+  // Failure can be triggered by non-command related issues, like misfires
+  // If a command object is passed let's make sure we fail it
   if (command != undefined) {
     this.emitFailure(command);
     command.deactivate();
   }
+
   this.completed++;
   this.failures++;
 
+  // Don't want to play over a sound
+  // TODO: REMOVE WHEN WE HAVE AUDIO PIECE
   if (!this.failing) {
     this.playerFail.play(function( err, player) {
       console.log("Playing Ended! "+err);
@@ -157,11 +161,15 @@ Station.prototype.processFailure = function(command) {
 }
 
 Station.prototype.processSuccess = function(command) {
+  // Stop further command actions
   command.clearHintTimer();
   command.clearFailTimer();
   command.deactivate();
+
+  // Update the station progress
   this.completed++;
   this.points += 100;
+
   this.emitSuccess(command);
   this.playerSuccess.play(function( err, player) {
     console.log("Success Player Ended! "+err);
@@ -261,32 +269,37 @@ Station.prototype.startGame = function() {
 
 Station.prototype.setupListeners = function() {
   var station = this;
+
   this.socket.on('connect', function(socket) {
     console.log('$$$$$$$$$$ FROM STATION - STATION joined');
   });
+
+
   this.socket.on('game_finished', function(data) {
+
     station.stopAllAudio();
     station.standby = true;
+    
     if(station.id == data.won) {
       station.playerWin.play();
       console.log("Won!");
     } else {
       station.playerLose.play();
     }
+    
     console.log('GAME FINISHED FROM STATION');
   });
+  
   this.socket.on('game_reset', function(data) {
     station.stopAllAudio();
     console.log('GAME RESET FROM STATION');
   });
 
   this.socket.on('station_'+station.id+'pin', function(pin) {
-    debugger;
     station.checkInput(pin);
   });
 
   this.socket.on('station_'+station.id+'launch', function(pin) {
-    debugger;
     station.checkInput(pin);
   });
 
@@ -378,15 +391,16 @@ Stations.prototype.init = function(boards) {
   this.winningSocket = null;
 }
 
-// Setup 4 stations for our game
 Stations.prototype.createStations = function(numStations) {
   for (var i = 0; i < numStations; i++) {
-    this.removeStation(this.boards[i].id);
-    console.log("****************** SHOULD NOT HAPPEN MORE THAN ONCE ******************")
-    console.log("CREATING STATION: "+ this.boards[i].id);
-
     // Need to make sure the station and the board have identical ids for socket.io
-    var p = this.addStation({'id': this.boards[i].id});
+    var p = this.addStation({'id':this.boards[i].id});
+  };
+}
+
+Stations.prototype.deleteStations = function(numStations) {
+  for (var i = 0; i < numStations; i++) {
+    this.removeStation(i);
   };
 }
 
@@ -398,8 +412,6 @@ Stations.prototype.addStation = function(stationId) {
 
   return this.stations[station.stationId];
 }
-
-
 
 Stations.prototype.emitStationCommand = function(msg) {
   // add arduino board to station
@@ -426,7 +438,7 @@ Stations.prototype.inStandby = function(msg) {
 }
 
 Stations.prototype.newGame = function(numStations) {
-  this.stations = {};
+  this.deleteStations(numStations);
   this.createStations(numStations);
   return this.stations;
 }

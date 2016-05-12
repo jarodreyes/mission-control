@@ -75,6 +75,8 @@ html
         } else if (type == "failure") {
           $('#commands').append($('<li class="failure">').text(msg));
         } else {
+          // Look for a previous command
+          $("li[data-id='"+cid+"'] > .progressBar").remove();
           $('#commands').append($('<li>').text(msg));
         }
         $("html, body").animate({ scrollTop: $(document).height() }, 500);

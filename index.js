@@ -85,7 +85,7 @@ stations.on('connection', function(socket) {
   console.log('index: stations connected');
   // Pass through commands from Stations to Screens
   socket.on('command', function(data){
-    console.log("COMMAND ISSUED *$*$*$*$*$*$*$*$*$*$*$*$* "+data.input);
+    console.log("COMMAND ISSUED $$$$$$$$$$$$$$$$$$$$$$$$$$$$ "+data.input);
     arduinos.emit('command_'+data.type+'_'+data.station , data);
     commanders.emit("station"+data.station, {'msg': data.msg, 'type': data.type, 'timeLeft': data.timeLeft, 'cid':data.cid});
   });

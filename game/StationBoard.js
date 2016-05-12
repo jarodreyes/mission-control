@@ -9,72 +9,84 @@ var pinSettings = [
     voltage: 900,
     trigger: 'Default',
     voltageTrigger: 'min', // min readings should register a minimum of the voltage, so vRead >= voltage.
+    lastReading: 500
   },
   { 
     pin: 1,
     voltage: 960,
     trigger: 'Fuel Cell 5',
     voltageTrigger: 'min', // min readings should register a minimum of the voltage, so vRead >= voltage.
+    lastReading: 500
   },
   { 
     pin: 2,
     voltage: 1023,
     trigger: 'Increase Hydrogen Pressure',
     voltageTrigger: 'min', 
+    lastReading: 500
   },
   { 
     pin: 3,
     voltage: 1023,
     trigger: 'Booster L3',
     voltageTrigger: 'min'
+    lastReading: 500
   },
   { 
     pin: 4,
     voltage: 1023,
     trigger: 'Buss B',
     voltageTrigger: 'min',
+    lastReading: 500
   },
   { 
     pin: 5,
     voltage: 1023,
     trigger: 'Release Swing Arm',
     voltageTrigger: 'min',
+    lastReading: 500
   },
   { 
     pin: 6,
     voltage: 960,
     trigger: 'Booster Ignition',
     voltageTrigger: 'min',
+    lastReading: 500
   },
   { 
     pin: 7,
     voltage: 1023,
     trigger: 'Guidance Control #2',
     voltageTrigger: 'min',
+    lastReading: 500
   },
   { 
     pin: 8,
     voltage: 1023,
     trigger: 'Gyroscope',
     voltageTrigger: 'min',
+    lastReading: 500
   },
   { 
     pin: 9,
     voltage: 1023,
     trigger: 'Rollover Sequence',
     voltageTrigger: 'min',
+    lastReading: 500
   },
   { 
     pin: 10,
     voltage: 1001,
     trigger: 'Launch Button',
     voltageTrigger: 'max',
+    lastReading: 1001
   },
   { 
     pin: 11,
     voltage: 960,
     trigger: 'Failure Pins',
     voltageTrigger: 'min',
+    lastReading: 500
   }
 ]
 
@@ -139,6 +151,8 @@ StationBoard.prototype.setupListeners = function() {
 
     sb.successfulCommand(command);
     sb.processWiringCommands(command);
+
+    // Play Success Audio
   });
 
   this.socket.on('command_failure_'+sb.id, function(command) {
@@ -165,11 +179,14 @@ StationBoard.prototype.setupListeners = function() {
       sb.processPinFlash(24);
     }
     console.log('GAME FINISHED FROM ARDUINO');
+
+    // Play finish Music
   });
 
   this.socket.on('game_start', function() {
     sb.resetting = false;
     sb.standby = false;
+    // Start the game with all alerts off: (1 = off) unless noted.
     sb.board.digitalWrite(21,1); // Fail Beacon
     sb.board.digitalWrite(22,1); // Fail Light
     sb.board.digitalWrite(23,1); // Success Beacon
@@ -178,10 +195,10 @@ StationBoard.prototype.setupListeners = function() {
     sb.board.digitalWrite(26,0); // Swing Arm Release
     sb.board.digitalWrite(27,0); // Gryoscope 
     sb.board.digitalWrite(28,0); // Launch Button
-    sb.board.digitalWrite(29,1); // Fuel Cell
-    sb.board.digitalWrite(30,1); // Indicators
-    sb.board.digitalWrite(31,0); // rumble
-    sb.board.digitalWrite(32,1); // Indicators
+    sb.board.digitalWrite(29,1); // Fuel Cell 1 = on
+    sb.board.digitalWrite(30,1); // Indicators 1 = on
+    sb.board.digitalWrite(31,1); // rumble
+    sb.board.digitalWrite(32,1); // Indicators 1 = on
   });
 
   /* Listen for station failure
@@ -190,11 +207,13 @@ StationBoard.prototype.setupListeners = function() {
 
     if (sb.id == data.station) {
       for (i = 25; i < 32; i += 1) {
-        sb.processPinIO(i, 0);
+        sb.processPinIO(i, 1);
       }
-      sb.board.digitalWrite(21, 1);
+      sb.board.digitalWrite(21, 0);
       sb.processPinFlash(22);
     }
+
+    // Play Fail Audio
 
   });
 
@@ -205,6 +224,7 @@ StationBoard.prototype.getBoardReady = function() {
   this.board.on("ready", function() {
     // Create an arduino object to pass around
     var ardy = this;
+
     // Once the board is connected, notify the commander that we're ready.
     this.samplingInterval(250);
 
@@ -213,6 +233,7 @@ StationBoard.prototype.getBoardReady = function() {
       ardy: ardy
     });
 
+    // Prepare Inputs, then announce connected.
     sb.prepareInputs(function() {
       sb.announceConnected();
     });

@@ -14,7 +14,7 @@ var gameSteps = [
 ]
 
 var constants = [
-  {'id':0, 'location':'Commander', 'success':'Shuttle Launch in T-40 Seconds!', 'on':[25, 26, 27], 'off':31, 'input':null, 'buffer': 5},
+  {'id':0, 'location':'Commander', 'success':'Shuttle Launch in T-40 Seconds!', 'on':[25, 26, 27], 'input':null, 'buffer': 5},
 
   {'id':4, 'location':'Launch Engineer', 'command': 'Stand By For Booster Ignition Sequence', 'flashAfter':29, 'input':6, 'buffer': 5, 'time':12, 'hint':['Booster Ignition One GO!','Two GO!', 'Three GO!', 'Four GO!', 'Five GO!', 'Six GO!'], 'success': 'Ignition Sequence Successful', 'failure': 'Booster Ignition Failed'},
 
