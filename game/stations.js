@@ -13,11 +13,11 @@ function makeId() {
     return text;
 }
 
-STATION_COUNT = 1;
+STATION_COUNT = 3;
 DEFAULT_WAIT_TIME = 5000;
 DEFAULT_INTERVAL = 7500;
 TIMED = false;
-FAILURES_ALLOWED = 11;
+FAILURES_ALLOWED = 2;
 // console.log = function(){}
 
 // ----------------------------------------- STATION ---------------------- //
@@ -63,10 +63,6 @@ Station.prototype.checkInput = function(pin) {
   var activeCommands = this.getActiveCommands();
   var acNum = activeCommands.length;
   var completed = station.getCompleted();
-  while (pin == 11) {
-    station.processFailure();
-    return;
-  }
   // if any Active commands are listening for this pin, do something
   for (var i = activeCommands.length - 1; i >= 0; i--) {
     console.log("Active Pin "+activeCommands[i].input);
@@ -74,6 +70,9 @@ Station.prototype.checkInput = function(pin) {
       console.log("Pin Firing: "+pin);
       station.processSuccess(activeCommands[i]);
     } else {
+      if (pin == 11) {
+        station.processFailure();
+      }
       station.misses++;
       console.log('Missed!')
     }
@@ -290,7 +289,7 @@ Station.prototype.setupListeners = function() {
     console.log('GAME FINISHED FROM STATION');
   });
   
-  this.socket.on('game_reset', function(data) {
+  this.socket.on('station_ready'+station.id, function(data) {
     station.stopAllAudio();
     console.log('GAME RESET FROM STATION');
   });
@@ -404,13 +403,13 @@ Stations.prototype.deleteStations = function(numStations) {
   };
 }
 
-Stations.prototype.addStation = function(stationId) {
+Stations.prototype.addStation = function(data) {
   this.stationCount++;
   console.log('Station Count: '+this.stationCount);
-  var station = new Station(stationId);
-  this.stations[stationId] = station;
+  var station = new Station(data);
+  this.stations[data.id] = station;
 
-  return this.stations[station.stationId];
+  return this.stations[station.id];
 }
 
 Stations.prototype.emitStationCommand = function(msg) {
