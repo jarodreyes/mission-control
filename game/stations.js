@@ -17,7 +17,7 @@ STATION_COUNT = 1;
 DEFAULT_WAIT_TIME = 5000;
 DEFAULT_INTERVAL = 7500;
 TIMED = false;
-FAILURES_ALLOWED = 11;
+FAILURES_ALLOWED = 10;
 // console.log = function(){}
 
 // ----------------------------------------- STATION ---------------------- //
@@ -290,7 +290,7 @@ Station.prototype.setupListeners = function() {
     console.log('GAME FINISHED FROM STATION');
   });
   
-  this.socket.on('game_reset', function(data) {
+  this.socket.on('station_ready'+station.id, function(data) {
     station.stopAllAudio();
     console.log('GAME RESET FROM STATION');
   });

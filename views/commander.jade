@@ -7,9 +7,9 @@ html
     script(src='/socket.io/socket.io.js')
     script(src='/jquery/jquery.js')
   body(class=typeof cssBody === 'undefined' ? 'property-page' : '')
-    div#overlay
+    div#overlay.success
       div.modal
-        p Mission Failed
+        p Mission Succeeded!
     ul#commands
     script.
       var id = "#{station}";
@@ -23,13 +23,24 @@ html
 
       socket.on('message', function(msg) {
         $('#commands').append($('<li>').text(msg));
-      })
+      });
+
+      socket.on('station_standby'+id, function() {
+        resetModal();
+        $("#overlay .modal p").text("Press the launch button when your Technicians are ready.");
+        $("#overlay").addClass('show');
+      });
+
+      socket.on('station_ready'+id, function() {
+        resetModal();
+        $("#overlay .modal p").text("Your station is ready to begin! Waiting for other stations.");
+        $("#overlay").addClass('show');
+      });
 
       socket.on('game_start', function() {
         points = 0;
         misses = 0;
-        $('#overlay').removeClass('show').removeClass('success');
-        $('#overlay .modal p').empty();
+        resetModal();
         $('#commands').empty();
       });
 
@@ -75,7 +86,7 @@ html
         } else if (type == "failure") {
           $('#commands').append($('<li class="failure">').text(msg));
         } else {
-          // Look for a previous command
+          // Look for a previous command and remove the scrollbar
           $("li[data-id='"+cid+"'] > .progressBar").remove();
           $('#commands').append($('<li>').text(msg));
         }
@@ -99,3 +110,9 @@ html
           $("li[data-id='#{cid}'] > .progressBar").remove();
         }
       };
+
+      function resetModal() {
+        $('#overlay').removeClass('show').removeClass('success');
+        $('#overlay .modal p').empty();
+        $('#overlay .modal span').remove();
+      }

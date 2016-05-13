@@ -1,94 +1,23 @@
 var five = require("johnny-five");
 var clientIo = require('socket.io-client');
+var pinSettings = require('./pinSettings.js');
+var outputs = require('./outputs.js');
 RESETTING = false;
 DEBUG = true;
 
-var pinSettings = [
-  { 
-    pin: 0,
-    voltage: 900,
-    trigger: 'Default',
-    voltageTrigger: 'min', // min readings should register a minimum of the voltage, so vRead >= voltage.
-    lastReading: 500
-  },
-  { 
-    pin: 1,
-    voltage: 960,
-    trigger: 'Fuel Cell 5',
-    voltageTrigger: 'min', // min readings should register a minimum of the voltage, so vRead >= voltage.
-    lastReading: 500
-  },
-  { 
-    pin: 2,
-    voltage: 1023,
-    trigger: 'Increase Hydrogen Pressure',
-    voltageTrigger: 'min', 
-    lastReading: 500
-  },
-  { 
-    pin: 3,
-    voltage: 1023,
-    trigger: 'Booster L3',
-    voltageTrigger: 'min'
-    lastReading: 500
-  },
-  { 
-    pin: 4,
-    voltage: 1023,
-    trigger: 'Buss B',
-    voltageTrigger: 'min',
-    lastReading: 500
-  },
-  { 
-    pin: 5,
-    voltage: 1023,
-    trigger: 'Release Swing Arm',
-    voltageTrigger: 'min',
-    lastReading: 500
-  },
-  { 
-    pin: 6,
-    voltage: 960,
-    trigger: 'Booster Ignition',
-    voltageTrigger: 'min',
-    lastReading: 500
-  },
-  { 
-    pin: 7,
-    voltage: 1023,
-    trigger: 'Guidance Control #2',
-    voltageTrigger: 'min',
-    lastReading: 500
-  },
-  { 
-    pin: 8,
-    voltage: 1023,
-    trigger: 'Gyroscope',
-    voltageTrigger: 'min',
-    lastReading: 500
-  },
-  { 
-    pin: 9,
-    voltage: 1023,
-    trigger: 'Rollover Sequence',
-    voltageTrigger: 'min',
-    lastReading: 500
-  },
-  { 
-    pin: 10,
-    voltage: 1001,
-    trigger: 'Launch Button',
-    voltageTrigger: 'max',
-    lastReading: 1001
-  },
-  { 
-    pin: 11,
-    voltage: 960,
-    trigger: 'Failure Pins',
-    voltageTrigger: 'min',
-    lastReading: 500
-  }
-]
+function getOutput(onum) {
+  var output = outputs.filter(function(v) {
+    return v.pin === onum; // Filter out the appropriate one
+  })[0];
+  return output;
+}
+
+function getPin(pnum) {
+  var pin = pinSettings.filter(function(v) {
+    return v.pin === pnum; // Filter out the appropriate one
+  })[0];
+  return pin;
+}
 
 // Station needs to own some things itself
 function StationBoard(opts) {
@@ -179,6 +108,9 @@ StationBoard.prototype.setupListeners = function() {
       sb.processPinFlash(24);
     }
     console.log('GAME FINISHED FROM ARDUINO');
+    setTimeout(function() {
+      sb.socket.emit('station_standby', {station: sb.id});
+    }, 6000);
 
     // Play finish Music
   });
@@ -197,7 +129,7 @@ StationBoard.prototype.setupListeners = function() {
     sb.board.digitalWrite(28,0); // Launch Button
     sb.board.digitalWrite(29,1); // Fuel Cell 1 = on
     sb.board.digitalWrite(30,1); // Indicators 1 = on
-    sb.board.digitalWrite(31,1); // rumble
+    sb.board.digitalWrite(31,0); // rumble
     sb.board.digitalWrite(32,1); // Indicators 1 = on
   });
 
@@ -252,6 +184,10 @@ StationBoard.prototype.prepareInputs = function(callback) {
   this.addInput(9);
   this.addInput(10);
   this.addInput(11);
+  this.addInput(12);
+  this.addInput(13);
+  this.addInput(14);
+  this.addInput(15);
   this.board.pinMode(21, five.Pin.OUTPUT);
   this.board.pinMode(22, five.Pin.OUTPUT);
   this.board.pinMode(23, five.Pin.OUTPUT);
@@ -264,6 +200,12 @@ StationBoard.prototype.prepareInputs = function(callback) {
   this.board.pinMode(30, five.Pin.OUTPUT);
   this.board.pinMode(31, five.Pin.OUTPUT);
   this.board.pinMode(32, five.Pin.OUTPUT);
+  // Audio
+  this.board.pinMode(40, five.Pin.OUTPUT);
+  this.board.pinMode(41, five.Pin.OUTPUT);
+  this.board.pinMode(42, five.Pin.OUTPUT);
+  this.board.pinMode(43, five.Pin.OUTPUT);
+  this.board.pinMode(44, five.Pin.OUTPUT);
   setTimeout(function() {
     callback();
   }, 1000);
@@ -271,9 +213,7 @@ StationBoard.prototype.prepareInputs = function(callback) {
 
 StationBoard.prototype.addInput = function(i) {
   var sb = this;
-  var pin = pinSettings.filter(function(v) {
-    return v.pin === i; // Filter out the appropriate one
-  })[0];
+  var pin = getPin(i);
 
   if (!this.inReset()) {
     this.board.analogRead(pin.pin, function(value) {
@@ -284,24 +224,24 @@ StationBoard.prototype.addInput = function(i) {
 
 StationBoard.prototype.successfulCommand = function(command) {
   var sb = this;
-  this.board.digitalWrite(24, 1); // ardy.digitalWrite(24, 1);
+  sb.processPinIO(24, 'on');
   setTimeout(function() {
-    sb.board.digitalWrite(24, 0);
+    sb.processPinIO(24, 'off');
   }, 2000);
 }
 
 StationBoard.prototype.failedCommand = function(command) {
   var sb = this;
   sb.setPinInactive(command.input);
-  this.board.digitalWrite(22, 1);
+  sb.processPinIO(22, 'on');
   setTimeout(function() {
-    sb.board.digitalWrite(22, 0);
+    sb.processPinIO(22, 'off');
   }, 2000);
 }
 
 StationBoard.prototype.processVoltage = function(pin, voltage) {
   var sb = this;
-  // console.log("@@@ PIN "+pin.pin+" @@@@@@@@ SWITCH VOLTAGE @@@@@@@@@@@@ "+voltage);
+  console.log("@@@ PIN "+pin.pin+" @@@@@@@@ SWITCH VOLTAGE @@@@@@@@@@@@ "+voltage);
   // Check that we aren't in standby, and then check some inputs.
   if (!sb.inStandby()) {
     if (pin.pin == 10 && sb.isPinActive(pin.pin)) {
@@ -317,38 +257,45 @@ StationBoard.prototype.processVoltage = function(pin, voltage) {
       }
     }
   } else {
+    // If we ARE in standby then let's reset.
     if (voltage >= pin.voltage) {
       if (pin.pin == 3 || pin.pin == 4 || pin.pin == 7) {
         sb.standby = false;
         sb.resetting = true;
-        sb.socket.emit('game_reset', {station:sb.id});
+        sb.socket.emit('station_reset', {station:sb.id});
       }
     }
   }
 }
 
-StationBoard.prototype.processPinIO = function(pinObject, val) {
+StationBoard.prototype.processPinIO = function(pinObject, dir) {
   console.log("Is array: "+pinObject instanceof Array);
+
   if (pinObject instanceof Array) {
     for (var i = pinObject.length - 1; i >= 0; i--) {
-      this.board.digitalWrite(pinObject[i], val);
+      var pin = getOutput(pinObject[i]);
+      var direction = dir == "on" ? pin.on : pin.off;
+      this.board.digitalWrite(pin.pin, direction);
     };
   } else {
-    this.board.digitalWrite(pinObject, val);
+    var pin = getOutput(pinObject);
+    var direction = dir == "on" ? pin.on : pin.off;
+    this.board.digitalWrite(pin.pin, val);
   }
 }
 
 StationBoard.prototype.processPinFlash = function(pinObject, command) {
   var sb = this;
+  var time = 3000;
   if (command != undefined) {
-    var time = command.timeLeft ? command.timeLeft * 1000 : 10000;
+    time = command.timeLeft;
   }
   function flash() {
-    sb.board.digitalWrite(pinObject, 1);
+    sb.processPinIO(pinObject, 'on');
 
     sb.board.wait(250, function() {
       // Turn it off...
-      sb.board.digitalWrite(pinObject, 0);
+      sb.processPinIO(pinObject, 'off');
     });
   }
 
@@ -358,7 +305,7 @@ StationBoard.prototype.processPinFlash = function(pinObject, command) {
 
   setTimeout(function() {
     clearInterval(timey);
-    sb.processPinIO(pinObject, 1);
+    sb.processPinIO(pinObject, 'off');
   }, time);
 
 }
@@ -367,7 +314,7 @@ StationBoard.prototype.processWiringCommands = function(command) {
   var sb = this;
   if (command.off != undefined) {
     console.log('Pin '+command.off+" Off!");
-    this.processPinIO(command.off, 1);
+    this.processPinIO(command.off, 'off');
   }
   if (command.flashOn != undefined) {
     console.log('Pin '+command.flashOn+" Flashing!");
@@ -375,15 +322,15 @@ StationBoard.prototype.processWiringCommands = function(command) {
   }
   if (command.on != undefined) {
     console.log('Pin '+command.on+" On!");
-    this.processPinIO(command.on, 0);
+    this.processPinIO(command.on, 'on');
   }
 
   if (command.toggle != undefined) {
     console.log('Pin '+command.toggle+" Toggled!");
     setTimeout(function() {
-      sb.processPinIO(command.toggle, 0);
+      sb.processPinIO(command.toggle, 'off');
     }, command.timeLeft * 1000);
-    sb.processPinIO(command.toggle, 1);
+    sb.processPinIO(command.toggle, 'on');
   }
   // TODO: Process sounds for new command.
 }
