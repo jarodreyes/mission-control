@@ -184,10 +184,8 @@ StationBoard.prototype.prepareInputs = function(callback) {
   this.addInput(9);
   this.addInput(10);
   this.addInput(11);
-  this.addInput(12);
   this.addInput(13);
   this.addInput(14);
-  this.addInput(15);
   this.board.pinMode(21, five.Pin.OUTPUT);
   this.board.pinMode(22, five.Pin.OUTPUT);
   this.board.pinMode(23, five.Pin.OUTPUT);
@@ -241,7 +239,7 @@ StationBoard.prototype.failedCommand = function(command) {
 
 StationBoard.prototype.processVoltage = function(pin, voltage) {
   var sb = this;
-  console.log("@@@ PIN "+pin.pin+" @@@@@@@@ SWITCH VOLTAGE @@@@@@@@@@@@ "+voltage);
+  // console.log("@@@ PIN "+pin.pin+" @@@@@@@@ SWITCH VOLTAGE @@@@@@@@@@@@ "+voltage);
   // Check that we aren't in standby, and then check some inputs.
   if (!sb.inStandby()) {
     if (pin.pin == 10 && sb.isPinActive(pin.pin)) {
@@ -258,12 +256,11 @@ StationBoard.prototype.processVoltage = function(pin, voltage) {
     }
   } else {
     // If we ARE in standby then let's reset.
-    if (voltage >= pin.voltage) {
-      if (pin.pin == 3 || pin.pin == 4 || pin.pin == 7) {
-        sb.standby = false;
-        sb.resetting = true;
-        sb.socket.emit('station_reset', {station:sb.id});
-      }
+    if (pin.pin == 10 && voltage < pin.voltage && sb.id == 3) {
+      console.log('STATION RESET TRIGGERED BY '+pin.pin+' STATION ID: '+sb.id);
+      sb.standby = false;
+      sb.resetting = true;
+      sb.socket.emit('station_reset', {station:sb.id});
     }
   }
 }
@@ -280,7 +277,8 @@ StationBoard.prototype.processPinIO = function(pinObject, dir) {
   } else {
     var pin = getOutput(pinObject);
     var direction = dir == "on" ? pin.on : pin.off;
-    this.board.digitalWrite(pin.pin, val);
+    console.log("DIRECTION ************** "+direction);
+    this.board.digitalWrite(pin.pin, direction);
   }
 }
 

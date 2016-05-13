@@ -16,7 +16,7 @@ var boards = [];
 
 // Constants
 PORTS = ["/dev/cu.usbmodem1421", "/dev/cu.usbmodem1411", "/dev/cu.usbmodem1411"];
-STATION_COUNT = 1;
+STATION_COUNT = 3;
 BOARDS_READY = 0;
 STATIONS_READY = 0;
 COMMANDERS_READY = 0;
@@ -81,12 +81,13 @@ arduinos.on('connection', function(socket) {
     STATIONS_RESET++;
     stations.emit('station_ready'+data.station);
     commanders.emit('station_ready'+data.station);
-    if (Stations.getStationCount() == STATIONS_RESET) {
+    if (STATION_COUNT == STATIONS_RESET) {
       resetGame();
     }
   });
 
   socket.on('station_standby', function(data) {
+    console.log("STATION STANDBY TRIGGERED BY"+data.station);
     commanders.emit('station_standby'+data.station);
   });
 });
@@ -133,9 +134,10 @@ stations.on('connection', function(socket) {
 });
 
 function tryToStartGame() {
+  var stationTotal = Stations.getStationCount();
   if (!RUNNING) {
     console.log(Stations.getStationCount()+"Station Ready: "+STATIONS_READY+" Commanders Ready: "+COMMANDERS_READY);
-    if (Stations.getStationCount() == STATIONS_READY && Stations.getStationCount() == COMMANDERS_READY && Stations.getStationCount() == BOARDS_READY) {
+    if (stationTotal == STATIONS_READY && stationTotal == COMMANDERS_READY && stationTotal == BOARDS_READY && stationTotal == STATION_COUNT) {
       // start game!
       RUNNING = true;
       console.log('startGame $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ ONLY ONCE!');
