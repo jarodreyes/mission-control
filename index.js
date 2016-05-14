@@ -59,6 +59,10 @@ commanders.on('connection', function(socket) {
     console.log('SOCKET.IO commanders added: '+ data.station + 'for socket' + socket.id);
     tryToStartGame();
   });
+  socket.on('disconnect', function() {
+    console.log('SOCKET.IO commander disconnected at socket: ' + socket.id);
+    COMMANDERS_READY--;
+  });
 });
 
 arduinos.on('connection', function(socket) {
@@ -90,6 +94,10 @@ arduinos.on('connection', function(socket) {
     console.log("STATION STANDBY TRIGGERED BY"+data.station);
     commanders.emit('station_standby'+data.station);
   });
+  socket.on('disconnect', function() {
+    console.log('SOCKET.IO arduino disconnected at socket: ' + socket.id);
+    BOARDS_READY--;
+  });
 });
 
 stations.on('connection', function(socket) {
@@ -103,7 +111,6 @@ stations.on('connection', function(socket) {
 
   socket.on('end_game', function(data) {
     STATIONS_FINISHED++;
-
     commanders.emit('end_game'+data.station, {'points':data.points, 'misses':data.misses});
 
     if (Stations.getStationCount() == STATIONS_FINISHED) {
@@ -117,7 +124,8 @@ stations.on('connection', function(socket) {
 
   socket.on('station_removed', function(data) {
     STATIONS_FINISHED++;
-    commanders.emit('station_removed'+data.station, 'Failure! Station Removed from Cluster');
+    commanders.emit('station_removed'+data.station, {'msg': 'Failure! Station Removed from Cluster', 'misses':data.misses});
+    
     if (Stations.getStationCount() == STATIONS_FINISHED) {
       var stations = processWinners();
       arduinos.emit('game_finished', {'won':stations.winner});
@@ -130,6 +138,11 @@ stations.on('connection', function(socket) {
     STATIONS_READY++;
     console.log('SOCKET.IO station added: '+ data.stationId + 'for socket' + socket.id);
     tryToStartGame();
+  });
+
+  socket.on('disconnect', function() {
+    STATIONS_READY--;
+    console.log('SOCKET.IO Station disconnected at socket: ' + socket.id);
   });
 });
 
@@ -158,7 +171,7 @@ function tryToStartGame() {
 
 function processWinners() {
   var data = Stations.getScore();
-  return {'winner': data.winner, 'loser':data.loser}
+  return {'winner': data.winner, 'loser':data.loser, 'points':data.points}
 }
 
 var resetGame = function() {

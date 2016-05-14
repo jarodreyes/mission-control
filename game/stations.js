@@ -51,8 +51,6 @@ Station.prototype.init = function(data) {
   this.timer = {};
   this.ready = false;
   this.player = {};
-  this.playerFail = {};
-  this.playerSuccess = {};
   this.failing = false;
   this.standby = false;
   this.setupListeners();
@@ -70,11 +68,8 @@ Station.prototype.checkInput = function(pin) {
       console.log("Pin Firing: "+pin);
       station.processSuccess(activeCommands[i]);
     } else {
-      if (pin == 11) {
-        station.processFailure();
-      }
-      station.misses++;
-      console.log('Missed!')
+      // If not active, it's a misfire!
+      station.processMisfire();
     }
   };
 }
@@ -86,7 +81,7 @@ Station.prototype.beginCommandSequence = function(command) {
   if(command.command != undefined) {
     this.emitCommand(command);
   } else {
-    this.emitSuccess(command);
+    this.emitMessage(command);
   }
 
   // If there isn't an input we're waiting for we can skip ahead.
@@ -148,15 +143,13 @@ Station.prototype.processFailure = function(command) {
 
   this.completed++;
   this.failures++;
+  this.misses++;
 
-  // Don't want to play over a sound
-  // TODO: REMOVE WHEN WE HAVE AUDIO PIECE
-  if (!this.failing) {
-    this.playerFail.play(function( err, player) {
-      console.log("Playing Ended! "+err);
-      station.failing = false;
-    });
-  }
+}
+
+Station.prototype.processMisfire = function(command) {
+  console.log("MISFIRE!");
+  this.misses++;
 }
 
 Station.prototype.processSuccess = function(command) {
@@ -170,9 +163,6 @@ Station.prototype.processSuccess = function(command) {
   this.points += 100;
 
   this.emitSuccess(command);
-  this.playerSuccess.play(function( err, player) {
-    console.log("Success Player Ended! "+err);
-  });
 }
 
 Station.prototype.awaitingInput = function(actionStep) {
@@ -181,6 +171,10 @@ Station.prototype.awaitingInput = function(actionStep) {
 
 Station.prototype.emitSuccess = function(command) {
   this.emitStationMsg('success', command)
+}
+
+Station.prototype.emitMessage = function(command) {
+  this.emitStationMsg('message', command)
 }
 
 Station.prototype.emitFailure = function(command) {
@@ -201,7 +195,7 @@ Station.prototype.emitStationMsg = function(type, command) {
   var timeLeft = command.time ? command.time : DEFAULT_WAIT_TIME/1000;
   data = {
     'station':this.id, 
-    'msg':command[type],
+    'msg':type == 'message' ? command['success'] : command[type],
     'type':type,
     'cid': command ? command.id : 0,
     'off':command.off,
@@ -279,13 +273,6 @@ Station.prototype.setupListeners = function() {
     station.stopAllAudio();
     station.standby = true;
     
-    if(station.id == data.won) {
-      station.playerWin.play();
-      console.log("Won!");
-    } else {
-      station.playerLose.play();
-    }
-    
     console.log('GAME FINISHED FROM STATION');
   });
   
@@ -307,19 +294,11 @@ Station.prototype.setupListeners = function() {
 
 Station.prototype.stopAllAudio = function() {
   this.player.stop();
-  this.playerFail.stop();
-  this.playerSuccess.stop();
-  this.playerLose.stop();
-  this.playerWin.stop();
 }
 
 Station.prototype.startAudio = function() {
   var station = this;
   this.player = new Player(__dirname + '/launch.mp3');
-  this.playerFail = new Player(__dirname + '/fail.mp3');
-  this.playerSuccess = new Player(__dirname + '/success.mp3');
-  this.playerLose = new Player(__dirname + '/lose.mp3');
-  this.playerWin = new Player(__dirname + '/winner.mp3');
 
   // play now and callback when playend
   this.player.play();
@@ -331,33 +310,12 @@ Station.prototype.startAudio = function() {
     console.log('Player Error');
     console.log(err);
   });
-  this.playerFail.on('error', function(err) {
-    console.log('Player Error');
-    console.log(err);
-    station.failing = false;
-  });
-  this.playerFail.on('playing',function(item){
-    station.failing = true;
-  });
-  this.playerSuccess.on('error', function(err) {
-    console.log('Player Error');
-    console.log(err);
-  });
-  this.playerLose.on('error', function(err) {
-    console.log('Player Error');
-    console.log(err);
-  });
-  this.playerWin.on('error', function(err) {
-    console.log('Player Error');
-    console.log(err);
-  });
 }
 
 Station.prototype.removeStation = function() {
   var station = this;
   this.endSequences(function() {
-    station.socket.emit('station_removed', {'station': station.id});
-    station.playerLose.play();
+    station.socket.emit('station_removed', {'station': station.id, 'failures':station.failures, 'misses':station.misses});
   });
 }
 
@@ -367,7 +325,6 @@ Station.prototype.endGame = function() {
 }
 
 Station.prototype.endSequences = function(callback) {
-  this.playerFail.stop();
   this.deactivateAllCommands();
   return callback();
 }
