@@ -84,19 +84,19 @@ var outputs = [
     on: 0, off: 1,
   },
   {
-    pin:43,
+    pin:42,
     name: 'Win Sound',
     slug: 'winSound',
     on: 0, off: 1,
   },
   {
-    pin:44,
+    pin:43,
     name: 'Fail Sound',
     slug: 'failSound',
     on: 0, off: 1,
   },
   {
-    pin:45,
+    pin:44,
     name: 'Launch Sound',
     slug: 'launchSound',
     on: 0, off: 1,

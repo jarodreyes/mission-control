@@ -13,7 +13,7 @@ function makeId() {
     return text;
 }
 
-STATION_COUNT = 3;
+STATION_COUNT = 1;
 DEFAULT_WAIT_TIME = 5000;
 DEFAULT_INTERVAL = 7500;
 TIMED = false;
@@ -68,11 +68,8 @@ Station.prototype.checkInput = function(pin) {
       console.log("Pin Firing: "+pin);
       station.processSuccess(activeCommands[i]);
     } else {
-      if (pin == 11) {
-        station.processFailure();
-      }
-      station.misses++;
-      console.log('Missed!')
+      // If not active, it's a misfire!
+      station.processMisfire();
     }
   };
 }
@@ -84,7 +81,7 @@ Station.prototype.beginCommandSequence = function(command) {
   if(command.command != undefined) {
     this.emitCommand(command);
   } else {
-    this.emitSuccess(command);
+    this.emitMessage(command);
   }
 
   // If there isn't an input we're waiting for we can skip ahead.
@@ -146,7 +143,13 @@ Station.prototype.processFailure = function(command) {
 
   this.completed++;
   this.failures++;
+  this.misses++;
 
+}
+
+Station.prototype.processMisfire = function(command) {
+  console.log("MISFIRE!");
+  this.misses++;
 }
 
 Station.prototype.processSuccess = function(command) {
@@ -170,6 +173,10 @@ Station.prototype.emitSuccess = function(command) {
   this.emitStationMsg('success', command)
 }
 
+Station.prototype.emitMessage = function(command) {
+  this.emitStationMsg('message', command)
+}
+
 Station.prototype.emitFailure = function(command) {
   this.emitStationMsg('failure', command);
 }
@@ -188,7 +195,7 @@ Station.prototype.emitStationMsg = function(type, command) {
   var timeLeft = command.time ? command.time : DEFAULT_WAIT_TIME/1000;
   data = {
     'station':this.id, 
-    'msg':command[type],
+    'msg':type == 'message' ? command['success'] : command[type],
     'type':type,
     'cid': command ? command.id : 0,
     'off':command.off,
@@ -308,7 +315,7 @@ Station.prototype.startAudio = function() {
 Station.prototype.removeStation = function() {
   var station = this;
   this.endSequences(function() {
-    station.socket.emit('station_removed', {'station': station.id});
+    station.socket.emit('station_removed', {'station': station.id, 'failures':station.failures, 'misses':station.misses});
   });
 }
 

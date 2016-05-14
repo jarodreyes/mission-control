@@ -106,13 +106,13 @@ StationBoard.prototype.setupListeners = function() {
     sb.playAllAudio(false);
 
     for (i = 25; i < 32; i += 1) {
-      sb.processPinIO(i, 1);
+      sb.processPinIO(i, "off");
     }
 
     if (sb.id == data.won) {
 
       sb.board.digitalWrite(23, 0);
-      sb.processPinFlash(24);
+      sb.processPinFlash(24, {timeLeft:30000});
       // Play winner music
       sb.playAudio('winSound', true);
     }
@@ -145,10 +145,10 @@ StationBoard.prototype.setupListeners = function() {
   /* Listen for station failure
      Show fail beacons */
   this.socket.on('station_removed', function(data) {
-
+    console.log('station lost');
     if (sb.id == data.station) {
       for (i = 25; i < 32; i += 1) {
-        sb.processPinIO(i, 1);
+        sb.processPinIO(i, "off");
       }
       sb.board.digitalWrite(21, 0);
       sb.processPinFlash(22);
@@ -279,7 +279,7 @@ StationBoard.prototype.processVoltage = function(pin, voltage) {
         // console.log("Pin"+i+"Voltage is: "+voltage);
       }
     } else {
-      if (voltage >= pin.voltage && sb.isPinActive(pin.pin)) {
+      if (voltage >= pin.voltage && pin.pin != 10) {
         console.log("@@@ PIN "+pin.pin+" @@@@@@@@ SWITCH VOLTAGE @@@@@@@@@@@@ "+voltage);
         sb.socket.emit('pin_fired', {station:sb.id, pin:pin.pin});
         sb.setPinInactive(pin.pin);
