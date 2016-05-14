@@ -12,6 +12,13 @@ function getOutput(onum) {
   return output;
 }
 
+function getOutputBySlug(slug) {
+  var output = outputs.filter(function(v) {
+    return v.slug === slug; // Filter out the appropriate one
+  })[0];
+  return output;
+}
+
 function getPin(pnum) {
   var pin = pinSettings.filter(function(v) {
     return v.pin === pnum; // Filter out the appropriate one
@@ -96,6 +103,7 @@ StationBoard.prototype.setupListeners = function() {
 
     sb.standby = true;
     sb.activePins = [];
+    sb.playAllAudio(false);
 
     for (i = 25; i < 32; i += 1) {
       sb.processPinIO(i, 1);
@@ -104,20 +112,21 @@ StationBoard.prototype.setupListeners = function() {
     if (sb.id == data.won) {
 
       sb.board.digitalWrite(23, 0);
-
       sb.processPinFlash(24);
+      // Play winner music
+      sb.playAudio('winSound', true);
     }
     console.log('GAME FINISHED FROM ARDUINO');
     setTimeout(function() {
       sb.socket.emit('station_standby', {station: sb.id});
     }, 6000);
 
-    // Play finish Music
   });
 
   this.socket.on('game_start', function() {
     sb.resetting = false;
     sb.standby = false;
+    sb.playAllAudio(false);
     // Start the game with all alerts off: (1 = off) unless noted.
     sb.board.digitalWrite(21,1); // Fail Beacon
     sb.board.digitalWrite(22,1); // Fail Light
@@ -146,6 +155,7 @@ StationBoard.prototype.setupListeners = function() {
     }
 
     // Play Fail Audio
+    this.playAudio('loseSound', true);
 
   });
 
@@ -226,6 +236,7 @@ StationBoard.prototype.successfulCommand = function(command) {
   setTimeout(function() {
     sb.processPinIO(24, 'off');
   }, 2000);
+  this.playAudio('successSound', true);
 }
 
 StationBoard.prototype.failedCommand = function(command) {
@@ -235,6 +246,26 @@ StationBoard.prototype.failedCommand = function(command) {
   setTimeout(function() {
     sb.processPinIO(22, 'off');
   }, 2000);
+  this.playAudio('failSound', true);
+}
+
+StationBoard.prototype.playAllAudio = function(play) {
+  this.playAudio('failSound', play);
+  this.playAudio('successSound', play);
+  this.playAudio('winSound', play);
+  this.playAudio('loseSound', play);
+}
+
+StationBoard.prototype.playAudio = function(slug, play) {
+  var output = getOutputBySlug(slug);
+  // get length of audio output.length
+  var i = play ? output.on : output.off;
+  this.board.digitalWrite(output.pin, i);
+  if (play) {
+    this.board.wait(500, function() {
+      this.digitalWrite(output.pin, output.off);
+    })
+  }
 }
 
 StationBoard.prototype.processVoltage = function(pin, voltage) {
@@ -256,7 +287,7 @@ StationBoard.prototype.processVoltage = function(pin, voltage) {
     }
   } else {
     // If we ARE in standby then let's reset.
-    if (pin.pin == 10 && voltage < pin.voltage && sb.id == 3) {
+    if (pin.pin == 10 && voltage < pin.voltage) {
       console.log('STATION RESET TRIGGERED BY '+pin.pin+' STATION ID: '+sb.id);
       sb.standby = false;
       sb.resetting = true;
