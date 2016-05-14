@@ -13,11 +13,11 @@ var gameSteps = [
   {'id':11, 'location':'Guidance', 'command':'Primary Gyroscope Not Responding', 'flashOn':27, 'input':8, 'hint':'Increase Gyroscope Speed', 'buffer':5, 'time':10, 'success': 'Primary Gyroscope Responsive', 'failure': 'Gyroscope Failure'},
   {'id':12, 'location':'Fuel Control', 'command':'Fuel Cell Pressure building', 'on':32, 'flashAfter':32, 'input':13, 'hint':'Clear Fuel Cell #4 Immediately', 'buffer':5, 'time':10, 'success': 'Fuel Cells Clear', 'failure': 'Fuel Cell 4 Damaged'},
   {'id':13, 'location':'Guidance Systems', 'command':'Danger! Guidance control 6 is unstable.', 'input':14, 'hint':'Release Guidance Control 6 Now', 'buffer':5, 'time':10, 'success': 'Guidance stable', 'failure': 'Guidance Control 6 Damaged'},
-  {'id':14, 'location':'Guidance Systems', 'command':'Prepare to deactivate Guidance Control', 'input':11, 'hint':'Deactivate Guidance Control 3', 'buffer':5, 'time':10, 'success': 'Guidance stable', 'failure': 'Guidance Control 6 Damaged'},
+  {'id':14, 'location':'Guidance Systems', 'command':'Prepare to deactivate Guidance Control', 'input':11, 'hint':'Deactivate Guidance Control 3', 'buffer':5, 'time':10, 'success': 'Guidance stable', 'failure': 'Guidance Control 3 Damaged'},
   {'id':17, 'location':'Guidance Systems', 'command':'Unload guidance systems', 'input':11, 'hint':'Deactivate Guidance Control 1 or 3', 'buffer':5, 'time':10, 'success': 'Guidance stable', 'failure': 'Guidance Control Damaged'},
   {'id':18, 'location':'Fuel Control', 'command':'Fuel Cell Warning', 'on':32, 'flashAfter':32, 'input':11, 'hint':'Fuel Cell 2 Disfunctional. Clear #2 Now!', 'buffer':5, 'time':15, 'success': 'Fuel Cells Clear', 'failure': 'Fuel Cell 2 Failing. Dangerously low Fuel.'},
   {'id':19, 'location':'Launch Engineer', 'command':'Internal Power problem -- diagnosing now', 'on':32, 'flashAfter':32, 'input':11, 'hint':'Transfer Power from Buss E Immediately!', 'buffer':8, 'time':16, 'success': 'Power Stable', 'failure': 'Power Buss E Failing.'},
-  {'id':20, 'location':'Fuel Control', 'command':'Booster Shutdown -- warning', 'input':11, 'hint':'Manually Shut Down Booster L4!', 'buffer':2, 'time':7, 'success': 'Booster Shutdown L4 is Complete', 'failure': 'Booster critically unstable.'},
+  {'id':20, 'location':'Fuel Control', 'command':'Booster Shutdown -- warning', 'input':11, 'hint':'Manually Shut Down Booster R1!', 'buffer':2, 'time':7, 'success': 'Booster Shutdown R1 is Complete', 'failure': 'Booster critically unstable.'},
 
   
 ]

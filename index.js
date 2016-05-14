@@ -16,7 +16,7 @@ var boards = [];
 
 // Constants
 PORTS = ["/dev/cu.usbmodem1421", "/dev/cu.usbmodem1411", "/dev/cu.usbmodem1411"];
-STATION_COUNT = 3;
+STATION_COUNT = 1;
 BOARDS_READY = 0;
 STATIONS_READY = 0;
 COMMANDERS_READY = 0;

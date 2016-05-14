@@ -13,7 +13,7 @@ function makeId() {
     return text;
 }
 
-STATION_COUNT = 3;
+STATION_COUNT = 1;
 DEFAULT_WAIT_TIME = 5000;
 DEFAULT_INTERVAL = 7500;
 TIMED = false;
