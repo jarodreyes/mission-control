@@ -1,0 +1,114 @@
+doctype html
+html
+  head
+    title Mission Control
+    meta(name="viewport" content="initial-scale=1, maximum-scale=1")
+
+    meta(name="apple-mobile-web-app-capable" content="yes")
+    meta(name="apple-mobile-web-app-status-bar-style" content="black")
+    link(rel="stylesheet" href="/css/ratchet.min.css")
+    script(src='/socket.io/socket.io.js')
+    script(src='/jquery/jquery.js')
+    script(src='/js/ratchet.min.js')
+  body(class=typeof cssBody === 'undefined' ? 'property-page' : '')
+    header.bar.bar-nav
+      h1.title Mission Control Admin
+
+    div.content
+      form#update.input-group
+        .input-row
+          label Fails Allowed
+          input.failures(type="text" name="failures" placeholder="Default: 4")
+        .input-row
+          label No fail mode (default: off)
+          .toggle#failToggle(style="float: left; margin: 2px 0px;")
+            .toggle-handle
+        .input-row
+          label Interval (seconds)
+          input.interval(type="text" name="interval" placeholder="Default: 8")
+        br
+        label 
+          h3 Active Stations
+        ul.table-view
+          li.table-view-cell All Stations
+            button.btn.station.btn-primary(data-station="0") Active
+          li.table-view-cell Station 1
+            button.btn.station.btn-primary(data-station="1") Active
+          li.table-view-cell Station 2
+            button.btn.station.btn-primary(data-station="2") Active
+          li.table-view-cell Station 3
+            button.btn.station.btn-primary(data-station="3") Active
+          li.table-view-cell Station 4
+            button.btn.station.btn-primary(data-station="4") Active
+        hr
+        input.stations(type="hidden" name="active_stations")
+        input.fail-mode(type="hidden" name="fail_mode")
+
+        button.btn.btn-block.btn-primary.submit Update Settings
+
+      button#restart.btn.btn-block.btn-negative(href="#" class="restartBtn button") Restart Server
+      p.restartNotice
+    script.
+      var activeStations = [1, 2, 3, 4];
+      var failMode = false;
+      var socket = io('/admin');
+
+      socket.on('connect', function() {
+        socket.emit('admin_joined');
+      });
+
+      document.querySelector('#failToggle').addEventListener('toggle', updateFailMode);
+      
+
+      function restartServer() {
+        $.post('/appRestart', function(data) {
+          console.log("restarting");
+          $(".restartNotice").text("Restarting...");
+        });
+      }
+
+      function checkData(e) {
+        e.preventDefault();
+        var button = $(e.currentTarget);
+        var station = button.data('station');
+        if (!button.hasClass('btn-primary') && station != 0) {
+          activeStations.push(station);
+          $("button[data-station='0']").removeClass('btn-primary');
+          button.addClass('btn-primary');
+        } else {
+          var index = activeStations.indexOf(station);
+          console.log(index);
+          button.removeClass('btn-primary');
+          activeStations.splice(index, 1);
+        }
+        if (!button.hasClass('btn-primary') && station == "0") {
+          $("button.station").addClass('btn-primary');
+          activeStations = [1, 2, 3, 4];
+        }
+        $('input.stations').val(activeStations);
+        console.log(activeStations);
+      }
+
+      function updateFailMode(e) {
+        $('input.fail-mode').val(e.detail.isActive);
+      }
+
+      function updateSettings(e) {
+        e.preventDefault();
+        console.log(e);
+        update = $('form#update').serialize();
+        $.post('/updateSettings', update, function(data) {
+          console.log("updating app settings");
+        }, 'json');
+      }
+
+      $(document).on("ready", function() {
+
+        $(".restartBtn").click(restartServer);
+
+        $("button.station").click(checkData);
+
+        $("button.submit").click(updateSettings);
+
+
+      });

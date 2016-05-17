@@ -2,6 +2,9 @@ var five = require("johnny-five");
 var clientIo = require('socket.io-client');
 var CommandFactory = require('./CommandFactory');
 var Player = require('player');
+var fs = require('fs');
+
+var settings = JSON.parse(fs.readFileSync('./settings.json'));
 
 function makeId() {
     var text = "";
@@ -13,11 +16,10 @@ function makeId() {
     return text;
 }
 
-STATION_COUNT = 1;
-DEFAULT_WAIT_TIME = 5000;
-DEFAULT_INTERVAL = 7500;
+DEFAULT_WAIT_TIME = settings.wait_time ? settings.wait_time : 5000;
+DEFAULT_INTERVAL = settings.default_interval ? settings.default_interval : 7500;
 TIMED = false;
-FAILURES_ALLOWED = 2;
+FAILURES_ALLOWED = settings.failures_allowed ? settings.failures_allowed - 1 : 3;
 // console.log = function(){}
 
 // ----------------------------------------- STATION ---------------------- //

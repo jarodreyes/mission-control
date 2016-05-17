@@ -3,31 +3,68 @@ var StationBoard = require('./game/StationBoard');
 // var commanders = require('./game/commanders');
 var express = require('express');
 var app = express();
+var bodyParser = require('body-parser');
 var http = require('http').Server(app);
 var five = require("johnny-five");
+var fs = require('fs');
 var clientIo = require('socket.io-client');
 console.log(clientIo);
 // console.log = function() {
 
 // };
-
+var settings = JSON.parse(fs.readFileSync('./settings.json'));
 var io = require('socket.io')(http);
 var boards = [];
 
 // Constants
-PORTS = ["/dev/cu.usbmodem1421", "/dev/cu.usbmodem1411", "/dev/cu.usbmodem1411"];
-STATION_COUNT = 1;
+PORTS = ["/dev/cu.usbmodem1424431", "/dev/cu.usbmodem14231", "/dev/cu.usbmodem14221", "/dev/cu.usbmodem14211"];
+STATION_COUNT = settings.station_count ? settings.station_count : 4;
 BOARDS_READY = 0;
 STATIONS_READY = 0;
 COMMANDERS_READY = 0;
 STATIONS_FINISHED = 0;
 RUNNING = false;
 STATIONS_RESET = 0;
+ACTIVE_STATIONS = [];
 
-for (var i = STATION_COUNT - 1; i >= 0; i--) {
-  var board = new five.Board(PORTS[i]);
+for (var stationId in settings.stations) {
+  if (settings.stations[stationId].active) {
+    ACTIVE_STATIONS.push(stationId);
+  }
+}
+
+function triggerRestart() {
+  var time = new Date;
+  var msg = "// Restarted again at: "+time.getHours()+":"+time.getMinutes()+". \n";
+  console.log(msg);
+  fs.appendFileSync("./game/restarts.js", msg);
+}
+
+function updateStations(numArray) {
+  console.log(numArray.indexOf("0")+" ************************** NUM ARRAY")
+  if (numArray.indexOf("0") == -1) {
+    for (var stationId in settings.stations) {
+      if (numArray.indexOf(stationId) == -1) {
+        settings.stations[stationId].active = false;
+      }
+    }
+  } else {
+    for (var stationId in settings.stations) {
+      settings.stations[stationId].active = true;
+    }
+  }
+  return settings.stations;
+}
+
+for (var i = settings.station_count - 1; i >= 0; i--) {
+  var board = new five.Board();
+  // var board = new five.Board({port: settings.stations[ACTIVE_STATIONS[i]].port});
+  board.on("fail", function(event) {
+    console.log("Received a %s message, from %s, reporting: %s", event.type, event.class, event.message);
+    triggerRestart();
+  });
   var stationBoard = new StationBoard({
-    'id': i+1,
+    'id': ACTIVE_STATIONS[i],
     'board': board,
   });
   boards.push(stationBoard);
@@ -35,6 +72,10 @@ for (var i = STATION_COUNT - 1; i >= 0; i--) {
 
 // Serve Static Assets
 app.use('/jquery', express.static(__dirname + '/node_modules/jquery/dist/'));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
+  extended: true
+})); 
 app.use(express.static(__dirname + '/public'));
 
 // Use Jade cuz rad.
@@ -44,6 +85,36 @@ app.get('/commander/:id', function(req, res){
   res.render('commander', {station: req.params.id});
 });
 
+app.get('/admin', function(req, res){
+  res.render('admin');
+});
+
+app.post('/appRestart', function(req, res){
+  triggerRestart();
+  return res.status(300).end();
+});
+
+app.post('/updateSettings', function(req, res){
+  var data = req.body;
+  req.body.active_stations = req.body.active_stations.split(",");
+  var count = req.body.active_stations.length >= 5 ? STATION_COUNT : req.body.active_stations.length;
+  var interval = req.body.interval ? req.body.interval * 1000 : DEFAULT_INTERVAL;
+  var fails = req.body.failures ? parseInt(req.body.failures) : FAILURES_ALLOWED;
+  var active = req.body.active_stations ? req.body.active_stations : [0];
+  settings.station_count = count;
+  settings.wait_time = DEFAULT_WAIT_TIME;
+  settings.default_interval = interval;
+  settings.failures_allowed = fails;
+  settings.stations = updateStations(active);
+
+  fs.writeFileSync('./settings.json', JSON.stringify(settings));
+  console.log("######################################## DATA: "+data);
+
+  triggerRestart();
+
+  return res.status(300).end();
+});
+
 http.listen(3000, function(){
   console.log('listening on *:3000');
 });
@@ -51,6 +122,14 @@ http.listen(3000, function(){
 var arduinos = io.of('/arduinos');
 var stations = io.of('/stations');
 var commanders = io.of('/commanders');
+var admin = io.of('/admin');
+
+admin.on('connection', function(socket) {
+  console.log('index: admin connecting');
+  socket.on('admin_joined', function(data){
+    console.log('SOCKET.IO admin added for socket' + socket.id);
+  });
+})
 
 commanders.on('connection', function(socket) {
   console.log('index: commanders connecting');
@@ -128,7 +207,7 @@ stations.on('connection', function(socket) {
     
     if (Stations.getStationCount() == STATIONS_FINISHED) {
       var stations = processWinners();
-      arduinos.emit('game_finished', {'won':stations.winner});
+      arduinos.emit('game_over', {'won':stations.winner, 'removed':data.station});
       commanders.emit('game_finished', {'won':stations.winner, 'lost':stations.loser, 'totalPoints':stations.points});
       socket.emit('game_finished', {'won':stations.winner, 'lost':stations.loser, 'totalPoints':stations.points})
     }

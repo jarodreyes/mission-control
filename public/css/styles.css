@@ -4,22 +4,45 @@ body {
   color: lime;
   background: black;
 }
-form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
-form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
-form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+form {  }
+form input {  }
+form button {  }
+
+a.button {
+  transition:all linear 0.3s;
+  -webkit-transition: all linear 0.3s;
+  display: block;
+  background: red;
+  padding: 80px;
+  width: 90%;
+  font-size: 32px;
+  text-align: center;
+  text-decoration: none;
+  color: white;
+  box-shadow: 2px 2px 0px;
+  margin: 40px;
+}
+
+a.button:hover {
+  box-shadow:0px 0px 0px;
+  background:darkred;
+}
+
 #commands { list-style-type: none; margin: 0; padding: 0 0 120px 0px; }
 #commands li { padding: 10px 70px; position: relative; }
 #commands li:nth-child(odd) { background: rgba(255,255,255,0.1); }
 
 #commands li.error::after {
   display:inline-block;
-  content:"FATAL!";
+  content:"WARNING!";
+  font-size:17px;
   float:right;
   color:red;
 }
 #commands li.hint::after {
   display:inline-block;
-  content:"WARNING!";
+  content:"FATAL!";
+  font-size:17px;
   float:right;
   color:orange;
 }

@@ -1,0 +1,1 @@
+{"station_count":4,"wait_time":5000,"default_interval":11000,"failures_allowed":6,"stations":{"1":{"port":"/dev/cu.usbmodem1424431","active":true},"2":{"port":"/dev/cu.usbmodem14231","active":false},"3":{"port":"/dev/cu.usbmodem14221","active":false},"4":{"port":"/dev/cu.usbmodem14211","active":false}}}

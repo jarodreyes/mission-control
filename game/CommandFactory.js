@@ -6,19 +6,15 @@ var gameSteps = [
 
   {'id':9, 'location':'Launch Engineer', 'command':'Internal Power Not Transferred From Buss B', 'on':null, 'input':4, 'hint':'Transfer Power From Buss B Only', 'buffer':2, 'time':12, 'success': 'Internal Power Transfer Complete', 'failure': 'Internal Power failure on Buss B'},
 
-  {'id':10, 'location':'Launch Engineer', 'command':'Release Swing Arm', 'flashOn':26, 'input':5, 'hint':'Swing Arm must be released', 'buffer':5, 'time':15, 'success': 'Swing Arm Released', 'failure': 'Failed to release Swing Arm'},
+  {'id':10, 'location':'Launch Engineer', 'command':'Release Swing Arm', 'flashOn':26, 'input':5, 'hint':'Swing Arm Must Be Released', 'buffer':5, 'time':15, 'success': 'Swing Arm Released', 'failure': 'Failed to release Swing Arm'},
 
   {'id':3, 'location':'Guidance', 'command':'Guidance Control #2 Did Not Release', 'input':7, 'hint':'Manually Release Guidance Control #2', 'buffer':5, 'time':15, 'success': 'Guidance Control Released', 'failure': 'Failed to Release Guidance Control'},
 
   {'id':11, 'location':'Guidance', 'command':'Primary Gyroscope Not Responding', 'flashOn':27, 'input':8, 'hint':'Increase Gyroscope Speed', 'buffer':5, 'time':10, 'success': 'Primary Gyroscope Responsive', 'failure': 'Gyroscope Failure'},
-  {'id':12, 'location':'Fuel Control', 'command':'Fuel Cell Pressure building', 'on':32, 'flashAfter':32, 'input':13, 'hint':'Clear Fuel Cell #4 Immediately', 'buffer':5, 'time':10, 'success': 'Fuel Cells Clear', 'failure': 'Fuel Cell 4 Damaged'},
+  {'id':12, 'location':'Fuel Control', 'command':'Fuel Cell Pressure building', 'on':32, 'flashAfter':32, 'input':13, 'hint':'Clear Fuel Cell 4 Immediately', 'buffer':5, 'time':10, 'success': 'Fuel Cells Clear', 'failure': 'Fuel Cell 4 Damaged'},
   {'id':13, 'location':'Guidance Systems', 'command':'Danger! Guidance control 6 is unstable.', 'input':14, 'hint':'Release Guidance Control 6 Now', 'buffer':5, 'time':10, 'success': 'Guidance stable', 'failure': 'Guidance Control 6 Damaged'},
-  {'id':14, 'location':'Guidance Systems', 'command':'Prepare to deactivate Guidance Control', 'input':11, 'hint':'Deactivate Guidance Control 3', 'buffer':5, 'time':10, 'success': 'Guidance stable', 'failure': 'Guidance Control 3 Damaged'},
-  {'id':17, 'location':'Guidance Systems', 'command':'Unload guidance systems', 'input':11, 'hint':'Deactivate Guidance Control 1 or 3', 'buffer':5, 'time':10, 'success': 'Guidance stable', 'failure': 'Guidance Control Damaged'},
-  {'id':18, 'location':'Fuel Control', 'command':'Fuel Cell Warning', 'on':32, 'flashAfter':32, 'input':11, 'hint':'Fuel Cell 2 Disfunctional. Clear #2 Now!', 'buffer':5, 'time':15, 'success': 'Fuel Cells Clear', 'failure': 'Fuel Cell 2 Failing. Dangerously low Fuel.'},
-  {'id':19, 'location':'Launch Engineer', 'command':'Internal Power problem -- diagnosing now', 'on':32, 'flashAfter':32, 'input':11, 'hint':'Transfer Power from Buss E Immediately!', 'buffer':8, 'time':16, 'success': 'Power Stable', 'failure': 'Power Buss E Failing.'},
-  {'id':20, 'location':'Fuel Control', 'command':'Booster Shutdown -- warning', 'input':11, 'hint':'Manually Shut Down Booster R1!', 'buffer':2, 'time':7, 'success': 'Booster Shutdown R1 is Complete', 'failure': 'Booster critically unstable.'},
-
+  {'id':14, 'location':'Launch Engineer', 'command':'Internal Power problem -- diagnosing now', 'on':32, 'flashAfter':32, 'input':11, 'hint':'Transfer Power from Buss E Immediately!', 'buffer':8, 'time':16, 'success': 'Power Stable', 'failure': 'Power Buss E Failing.'},
+  {'id':17, 'location':'Fuel Control', 'command':'Prime the Booster Pump', 'input':11, 'hint':'Manually Shut Down Booster R1!', 'buffer':2, 'time':7, 'success': 'Booster Shutdown R1 is Complete', 'failure': 'Booster Critically Unstable.'},
   
 ]
 

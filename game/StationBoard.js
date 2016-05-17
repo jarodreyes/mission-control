@@ -109,12 +109,41 @@ StationBoard.prototype.setupListeners = function() {
       sb.processPinIO(i, "off");
     }
 
-    if (sb.id == data.won) {
+    if (sb.id == data.won ) {
 
       sb.board.digitalWrite(23, 0);
       sb.processPinFlash(24, {timeLeft:30000});
       // Play winner music
       sb.playAudio('winSound', true);
+    }
+    console.log('GAME FINISHED FROM ARDUINO');
+    setTimeout(function() {
+      sb.socket.emit('station_standby', {station: sb.id});
+    }, 6000);
+
+  });
+
+  this.socket.on('game_over', function(data) {
+    console.log("GAME OVER!");
+    sb.standby = true;
+    sb.activePins = [];
+    sb.playAllAudio(false);
+
+    for (i = 25; i < 32; i += 1) {
+      sb.processPinIO(i, "off");
+    }
+
+    if (sb.id == data.won && sb.id != data.removed) {
+
+      sb.board.digitalWrite(23, 0);
+      sb.processPinFlash(24, {timeLeft:30000});
+      // Play winner music
+      sb.playAudio('winSound', true);
+    } else {
+      sb.board.digitalWrite(21, 0);
+      sb.processPinFlash(22);
+      // Play fail music
+      sb.playAudio('failSound', true);
     }
     console.log('GAME FINISHED FROM ARDUINO');
     setTimeout(function() {
@@ -155,7 +184,7 @@ StationBoard.prototype.setupListeners = function() {
     }
 
     // Play Fail Audio
-    this.playAudio('loseSound', true);
+    this.playAudio('failSound', true);
 
   });
 
@@ -188,32 +217,32 @@ StationBoard.prototype.prepareInputs = function(callback) {
   this.addInput(3);
   this.addInput(4);
   this.addInput(5);
-  this.addInput(6);
-  this.addInput(7);
-  this.addInput(8);
-  this.addInput(9);
-  this.addInput(10);
-  this.addInput(11);
-  this.addInput(13);
-  this.addInput(14);
-  this.board.pinMode(21, five.Pin.OUTPUT);
-  this.board.pinMode(22, five.Pin.OUTPUT);
-  this.board.pinMode(23, five.Pin.OUTPUT);
-  this.board.pinMode(24, five.Pin.OUTPUT);
-  this.board.pinMode(25, five.Pin.OUTPUT);
-  this.board.pinMode(26, five.Pin.OUTPUT);
-  this.board.pinMode(27, five.Pin.OUTPUT);
-  this.board.pinMode(28, five.Pin.OUTPUT);
-  this.board.pinMode(29, five.Pin.OUTPUT);
-  this.board.pinMode(30, five.Pin.OUTPUT);
-  this.board.pinMode(31, five.Pin.OUTPUT);
-  this.board.pinMode(32, five.Pin.OUTPUT);
-  // Audio
-  this.board.pinMode(40, five.Pin.OUTPUT);
-  this.board.pinMode(41, five.Pin.OUTPUT);
-  this.board.pinMode(42, five.Pin.OUTPUT);
-  this.board.pinMode(43, five.Pin.OUTPUT);
-  this.board.pinMode(44, five.Pin.OUTPUT);
+  // this.addInput(6);
+  // this.addInput(7);
+  // this.addInput(8);
+  // this.addInput(9);
+  // this.addInput(10);
+  // this.addInput(11);
+  // this.addInput(13);
+  // this.addInput(14);
+  // this.board.pinMode(21, five.Pin.OUTPUT);
+  // this.board.pinMode(22, five.Pin.OUTPUT);
+  // this.board.pinMode(23, five.Pin.OUTPUT);
+  // this.board.pinMode(24, five.Pin.OUTPUT);
+  // this.board.pinMode(25, five.Pin.OUTPUT);
+  // this.board.pinMode(26, five.Pin.OUTPUT);
+  // this.board.pinMode(27, five.Pin.OUTPUT);
+  // this.board.pinMode(28, five.Pin.OUTPUT);
+  // this.board.pinMode(29, five.Pin.OUTPUT);
+  // this.board.pinMode(30, five.Pin.OUTPUT);
+  // this.board.pinMode(31, five.Pin.OUTPUT);
+  // this.board.pinMode(32, five.Pin.OUTPUT);
+  // // Audio
+  // this.board.pinMode(40, five.Pin.OUTPUT);
+  // this.board.pinMode(41, five.Pin.OUTPUT);
+  // this.board.pinMode(42, five.Pin.OUTPUT);
+  // this.board.pinMode(43, five.Pin.OUTPUT);
+  // this.board.pinMode(44, five.Pin.OUTPUT);
   setTimeout(function() {
     callback();
   }, 1000);
@@ -246,7 +275,7 @@ StationBoard.prototype.failedCommand = function(command) {
   setTimeout(function() {
     sb.processPinIO(22, 'off');
   }, 2000);
-  this.playAudio('failSound', true);
+  // this.playAudio('failSound', true);
 }
 
 StationBoard.prototype.playAllAudio = function(play) {
@@ -258,11 +287,12 @@ StationBoard.prototype.playAllAudio = function(play) {
 
 StationBoard.prototype.playAudio = function(slug, play) {
   var output = getOutputBySlug(slug);
+  var delay = slug == 'failSound' ? 3000 : 500;
   // get length of audio output.length
   var i = play ? output.on : output.off;
   this.board.digitalWrite(output.pin, i);
   if (play) {
-    this.board.wait(500, function() {
+    this.board.wait(delay, function() {
       this.digitalWrite(output.pin, output.off);
     })
   }
