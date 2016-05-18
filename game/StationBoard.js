@@ -169,6 +169,7 @@ StationBoard.prototype.setupListeners = function() {
     sb.board.digitalWrite(30,1); // Indicators 1 = on
     sb.board.digitalWrite(31,0); // rumble
     sb.board.digitalWrite(32,1); // Indicators 1 = on
+    sb.board.digitalWrite(44,1); // Indicators 1 = on
   });
 
   /* Listen for station failure
@@ -180,7 +181,7 @@ StationBoard.prototype.setupListeners = function() {
         sb.processPinIO(i, "off");
       }
       sb.board.digitalWrite(21, 0);
-      sb.processPinFlash(22);
+      sb.processPinFlash(22, {timeLeft:30000});
     }
 
     // Play Fail Audio
@@ -217,32 +218,32 @@ StationBoard.prototype.prepareInputs = function(callback) {
   this.addInput(3);
   this.addInput(4);
   this.addInput(5);
-  // this.addInput(6);
-  // this.addInput(7);
-  // this.addInput(8);
-  // this.addInput(9);
-  // this.addInput(10);
-  // this.addInput(11);
-  // this.addInput(13);
-  // this.addInput(14);
-  // this.board.pinMode(21, five.Pin.OUTPUT);
-  // this.board.pinMode(22, five.Pin.OUTPUT);
-  // this.board.pinMode(23, five.Pin.OUTPUT);
-  // this.board.pinMode(24, five.Pin.OUTPUT);
-  // this.board.pinMode(25, five.Pin.OUTPUT);
-  // this.board.pinMode(26, five.Pin.OUTPUT);
-  // this.board.pinMode(27, five.Pin.OUTPUT);
-  // this.board.pinMode(28, five.Pin.OUTPUT);
-  // this.board.pinMode(29, five.Pin.OUTPUT);
-  // this.board.pinMode(30, five.Pin.OUTPUT);
-  // this.board.pinMode(31, five.Pin.OUTPUT);
-  // this.board.pinMode(32, five.Pin.OUTPUT);
-  // // Audio
-  // this.board.pinMode(40, five.Pin.OUTPUT);
-  // this.board.pinMode(41, five.Pin.OUTPUT);
-  // this.board.pinMode(42, five.Pin.OUTPUT);
-  // this.board.pinMode(43, five.Pin.OUTPUT);
-  // this.board.pinMode(44, five.Pin.OUTPUT);
+  this.addInput(6);
+  this.addInput(7);
+  this.addInput(8);
+  this.addInput(9);
+  this.addInput(10);
+  this.addInput(11);
+  this.addInput(13);
+  this.addInput(14);
+  this.board.pinMode(21, five.Pin.OUTPUT);
+  this.board.pinMode(22, five.Pin.OUTPUT);
+  this.board.pinMode(23, five.Pin.OUTPUT);
+  this.board.pinMode(24, five.Pin.OUTPUT);
+  this.board.pinMode(25, five.Pin.OUTPUT);
+  this.board.pinMode(26, five.Pin.OUTPUT);
+  this.board.pinMode(27, five.Pin.OUTPUT);
+  this.board.pinMode(28, five.Pin.OUTPUT);
+  this.board.pinMode(29, five.Pin.OUTPUT);
+  this.board.pinMode(30, five.Pin.OUTPUT);
+  this.board.pinMode(31, five.Pin.OUTPUT);
+  this.board.pinMode(32, five.Pin.OUTPUT);
+  // Audio
+  this.board.pinMode(40, five.Pin.OUTPUT);
+  this.board.pinMode(41, five.Pin.OUTPUT);
+  this.board.pinMode(42, five.Pin.OUTPUT);
+  this.board.pinMode(43, five.Pin.OUTPUT);
+  this.board.pinMode(44, five.Pin.OUTPUT);
   setTimeout(function() {
     callback();
   }, 1000);
@@ -275,7 +276,7 @@ StationBoard.prototype.failedCommand = function(command) {
   setTimeout(function() {
     sb.processPinIO(22, 'off');
   }, 2000);
-  // this.playAudio('failSound', true);
+  this.playAudio('failSound', true);
 }
 
 StationBoard.prototype.playAllAudio = function(play) {
@@ -287,6 +288,7 @@ StationBoard.prototype.playAllAudio = function(play) {
 
 StationBoard.prototype.playAudio = function(slug, play) {
   var output = getOutputBySlug(slug);
+  console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! PLAY AUDIO "+output.pin);
   var delay = slug == 'failSound' ? 3000 : 500;
   // get length of audio output.length
   var i = play ? output.on : output.off;
