@@ -10,6 +10,16 @@ html
     script(src='/socket.io/socket.io.js')
     script(src='/jquery/jquery.js')
     script(src='/js/ratchet.min.js')
+    style.
+      button.btn {
+        padding: 0px 110px;
+        height:98%;
+      }
+      .table-view-cell {
+        padding: 30px 65px 11px 15px;
+        height: 80px;
+        margin: 0px;
+      }
   body(class=typeof cssBody === 'undefined' ? 'property-page' : '')
     header.bar.bar-nav
       h1.title Mission Control Admin
@@ -71,17 +81,18 @@ html
         e.preventDefault();
         var button = $(e.currentTarget);
         var station = button.data('station');
-        if (!button.hasClass('btn-primary') && station != 0) {
+        var active = button.hasClass('btn-primary');
+        if (!active && station != 0) {
           activeStations.push(station);
-          $("button[data-station='0']").removeClass('btn-primary');
           button.addClass('btn-primary');
-        } else {
+        } else if (active && station !=0) {
           var index = activeStations.indexOf(station);
           console.log(index);
+          $('button[data-station="0"]').removeClass('btn-primary');
           button.removeClass('btn-primary');
           activeStations.splice(index, 1);
         }
-        if (!button.hasClass('btn-primary') && station == "0") {
+        if (!active && station == "0") {
           $("button.station").addClass('btn-primary');
           activeStations = [1, 2, 3, 4];
         }
@@ -109,6 +120,5 @@ html
         $("button.station").click(checkData);
 
         $("button.submit").click(updateSettings);
-
 
       });
