@@ -19,5 +19,6 @@
   },
   "devDependencies": {
     "nodemon": "^1.9.2"
-  }
+  },
+  "repository": "git@github.com:jarodreyes/mission-control.git",
 }
