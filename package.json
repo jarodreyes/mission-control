@@ -16,5 +16,8 @@
     "jquery": "^2.2.3",
     "player": "^0.6.1",
     "socket.io": "^1.4.5"
+  },
+  "devDependencies": {
+    "nodemon": "^1.9.2"
   }
 }

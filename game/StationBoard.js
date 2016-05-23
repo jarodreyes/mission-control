@@ -276,7 +276,7 @@ StationBoard.prototype.failedCommand = function(command) {
   setTimeout(function() {
     sb.processPinIO(22, 'off');
   }, 2000);
-  this.playAudio('failSound', true);
+  // this.playAudio('failSound', true);
 }
 
 StationBoard.prototype.playAllAudio = function(play) {
@@ -312,7 +312,7 @@ StationBoard.prototype.processVoltage = function(pin, voltage) {
       }
     } else {
       if (voltage >= pin.voltage && pin.pin != 10) {
-        console.log("@@@ PIN "+pin.pin+" @@@@@@@@ SWITCH VOLTAGE @@@@@@@@@@@@ "+voltage);
+        console.log(+pin.pin+" SWITCH VOLTAGE @@@"+pin.pin+"@@"+pin.pin+"@"+pin.pin+"@@"+pin.pin+"@"+pin.pin+"@@"+pin.pin+"@ "+voltage);
         sb.socket.emit('pin_fired', {station:sb.id, pin:pin.pin});
         sb.setPinInactive(pin.pin);
       }

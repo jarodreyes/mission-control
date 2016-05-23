@@ -57,8 +57,8 @@ function updateStations(numArray) {
 }
 
 for (var i = settings.station_count - 1; i >= 0; i--) {
-  var board = new five.Board();
-  // var board = new five.Board({port: settings.stations[ACTIVE_STATIONS[i]].port});
+  // var board = new five.Board();
+  var board = new five.Board({port: settings.stations[ACTIVE_STATIONS[i]].port});
   board.on("fail", function(event) {
     console.log("Received a %s message, from %s, reporting: %s", event.type, event.class, event.message);
     triggerRestart();
