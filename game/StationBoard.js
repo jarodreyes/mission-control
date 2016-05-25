@@ -141,7 +141,7 @@ StationBoard.prototype.setupListeners = function() {
       sb.playAudio('winSound', true);
     } else {
       sb.board.digitalWrite(21, 0);
-      sb.processPinFlash(22);
+      sb.processPinFlash(22, {timeLeft:30000});
       // Play fail music
       sb.playAudio('failSound', true);
     }
@@ -185,7 +185,7 @@ StationBoard.prototype.setupListeners = function() {
     }
 
     // Play Fail Audio
-    this.playAudio('failSound', true);
+    sb.playAudio('failSound', true);
 
   });
 
@@ -266,7 +266,7 @@ StationBoard.prototype.successfulCommand = function(command) {
   setTimeout(function() {
     sb.processPinIO(24, 'off');
   }, 2000);
-  this.playAudio('successSound', true);
+  sb.playAudio('successSound', true);
 }
 
 StationBoard.prototype.failedCommand = function(command) {
@@ -287,15 +287,16 @@ StationBoard.prototype.playAllAudio = function(play) {
 }
 
 StationBoard.prototype.playAudio = function(slug, play) {
+  var sb = this;
   var output = getOutputBySlug(slug);
   console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! PLAY AUDIO "+output.pin);
   var delay = slug == 'failSound' ? 3000 : 500;
   // get length of audio output.length
   var i = play ? output.on : output.off;
-  this.board.digitalWrite(output.pin, i);
+  sb.board.digitalWrite(output.pin, i);
   if (play) {
-    this.board.wait(delay, function() {
-      this.digitalWrite(output.pin, output.off);
+    sb.board.wait(delay, function() {
+      sb.board.digitalWrite(output.pin, output.off);
     })
   }
 }

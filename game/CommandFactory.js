@@ -1,4 +1,4 @@
-MAX_STEPS = 9;
+MAX_STEPS = 8;
 var gameSteps = [
   {'id':1, 'location':'Fuel Control', 'command':'Fuel Cell Error!', 'on':32, 'flashAfter':32, 'input':1, 'hint':'Must Clear Fuel Cells 1, and 5 Only', 'buffer':1, 'time':11, 'success': 'Fuel Cells Clear', 'failure': 'Failed to clear Fuel Cells!'},
 

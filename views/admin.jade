@@ -54,7 +54,7 @@ html
         input.stations(type="hidden" name="active_stations")
         input.fail-mode(type="hidden" name="fail_mode")
 
-        button.btn.btn-block.btn-primary.submit Update Settings
+        button.btn.btn-block.btn-primary.submit(href="#" style="min-height:98px;") Update Settings
 
       button#restart.btn.btn-block.btn-negative(href="#" class="restartBtn button") Restart Server
       p.restartNotice
@@ -101,6 +101,7 @@ html
       }
 
       function updateFailMode(e) {
+        alert(e.detail.isActive);
         $('input.fail-mode').val(e.detail.isActive);
       }
 

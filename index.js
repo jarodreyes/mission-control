@@ -26,6 +26,7 @@ STATIONS_FINISHED = 0;
 RUNNING = false;
 STATIONS_RESET = 0;
 ACTIVE_STATIONS = [];
+STATIONS_FAILED = 0;
 
 for (var stationId in settings.stations) {
   if (settings.stations[stationId].active) {
@@ -44,6 +45,7 @@ function updateStations(numArray) {
   console.log(numArray.indexOf("0")+" ************************** NUM ARRAY")
   if (numArray.indexOf("0") == -1) {
     for (var stationId in settings.stations) {
+      console.log("STATION ID ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"+stationId)
       if (numArray.indexOf(stationId) == -1) {
         settings.stations[stationId].active = false;
       }
@@ -101,9 +103,13 @@ app.post('/updateSettings', function(req, res){
   var interval = req.body.interval ? req.body.interval * 1000 : DEFAULT_INTERVAL;
   var fails = req.body.failures ? parseInt(req.body.failures) : FAILURES_ALLOWED;
   var active = req.body.active_stations ? req.body.active_stations : [0];
+  var noFailMode = req.body.fail_mode ? req.body.fail_mode : false;
   settings.station_count = count;
   settings.wait_time = DEFAULT_WAIT_TIME;
   settings.default_interval = interval;
+  if (noFailMode) {
+    fails = 15;
+  }
   settings.failures_allowed = fails;
   settings.stations = updateStations(active);
 
@@ -171,7 +177,9 @@ arduinos.on('connection', function(socket) {
 
   socket.on('station_standby', function(data) {
     console.log("STATION STANDBY TRIGGERED BY"+data.station);
-    commanders.emit('station_standby'+data.station);
+    setTimeout(function() {
+      commanders.emit('station_standby'+data.station);
+    }, 5000)
   });
   socket.on('disconnect', function() {
     console.log('SOCKET.IO arduino disconnected at socket: ' + socket.id);
@@ -203,7 +211,8 @@ stations.on('connection', function(socket) {
 
   socket.on('station_removed', function(data) {
     STATIONS_FINISHED++;
-    commanders.emit('station_removed'+data.station, {'msg': 'Failure! Station Removed from Cluster', 'misses':data.misses});
+    commanders.emit('station_removed'+data.station, {'msg': 'Failure! Station Removed from Cluster with '+data.misses+' Misses.', 'misses':data.misses});
+    arduinos.emit('station_removed', {'station': data.station, 'misses':data.misses});
     
     if (Stations.getStationCount() == STATIONS_FINISHED) {
       var stations = processWinners();

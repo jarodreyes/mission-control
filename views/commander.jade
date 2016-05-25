@@ -63,8 +63,8 @@ html
           resetModal();
         }
         console.log(data, data.totalPoints);
-        points = data.totalPoints;
         if (id == data.won) {
+          points = data.totalPoints;
           $("#overlay").addClass('success').find('.modal p').text("Congratulations Technicians! Score: "+points+" points");
           $("#overlay .modal").append($('<span>').text('This Station demonstrated superb communication and executed shuttle launch with the least errors or misses.'));
         } else {
