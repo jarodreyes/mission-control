@@ -1,32 +1,32 @@
 MAX_STEPS = 8;
 var gameSteps = [
-  {'id':1, 'location':'Fuel Control', 'command':'Fuel Cell Error!', 'on':32, 'flashAfter':32, 'input':1, 'hint':'Must Clear Fuel Cells 1, and 5 Only', 'buffer':1, 'time':11, 'success': 'Fuel Cells Clear', 'failure': 'Failed to clear Fuel Cells!'},
+  {'id':1, 'location':'Fuel Control', 'command':'Fuel Cell Error!', 'on':32, 'flashAfter':32, 'input':1, 'hint':'Must Clear Fuel Cells 1, and 5 Only', 'buffer':1, 'time':31, 'success': 'Fuel Cells Clear', 'failure': 'Failed to clear Fuel Cells!'},
 
-  {'id':2, 'location':'Fuel Control', 'command':'Hydrogen Pressure Low', 'flashOn':25, 'input':2, 'hint':'Increase Hydrogen Pressure', 'buffer':6, 'time':20, 'success': 'Hydrogen Pressure at Maximum', 'failure': 'Failed to Increase Hydrogen Pressure'},
+  {'id':2, 'location':'Fuel Control', 'command':'Hydrogen Pressure Low', 'flashOn':25, 'input':2, 'hint':'Increase Hydrogen Pressure', 'buffer':6, 'time':25, 'success': 'Hydrogen Pressure at Maximum', 'failure': 'Failed to Increase Hydrogen Pressure'},
 
-  {'id':9, 'location':'Launch Engineer', 'command':'Internal Power Not Transferred From Buss B', 'on':null, 'input':4, 'hint':'Transfer Power From Buss B Only', 'buffer':2, 'time':12, 'success': 'Internal Power Transfer Complete', 'failure': 'Internal Power failure on Buss B'},
+  {'id':9, 'location':'Launch Engineer', 'command':'Internal Power Not Transferred From Buss B', 'on':null, 'input':4, 'hint':'Transfer Power From Buss B Only', 'buffer':2, 'time':32, 'success': 'Internal Power Transfer Complete', 'failure': 'Internal Power failure on Buss B'},
 
-  {'id':10, 'location':'Launch Engineer', 'command':'Release Swing Arm', 'flashOn':26, 'input':5, 'hint':'Swing Arm Must Be Released', 'buffer':5, 'time':15, 'success': 'Swing Arm Released', 'failure': 'Failed to release Swing Arm'},
+  {'id':10, 'location':'Launch Engineer', 'command':'Release Swing Arm', 'flashOn':26, 'input':5, 'hint':'Swing Arm Must Be Released', 'buffer':5, 'time':25, 'success': 'Swing Arm Released', 'failure': 'Failed to release Swing Arm'},
 
-  {'id':3, 'location':'Guidance', 'command':'Guidance Control #2 Did Not Release', 'input':7, 'hint':'Manually Release Guidance Control #2', 'buffer':5, 'time':15, 'success': 'Guidance Control Released', 'failure': 'Failed to Release Guidance Control'},
+  {'id':3, 'location':'Guidance', 'command':'Guidance Control #2 Did Not Release', 'input':7, 'hint':'Manually Release Guidance Control #2', 'buffer':5, 'time':25, 'success': 'Guidance Control Released', 'failure': 'Failed to Release Guidance Control'},
 
   {'id':11, 'location':'Guidance', 'command':'Primary Gyroscope Not Responding', 'flashOn':27, 'input':8, 'hint':'Increase Gyroscope Speed', 'buffer':5, 'time':10, 'success': 'Primary Gyroscope Responsive', 'failure': 'Gyroscope Failure'},
-  {'id':12, 'location':'Fuel Control', 'command':'Fuel Cell Pressure building', 'on':32, 'flashAfter':32, 'input':13, 'hint':'Clear Fuel Cell 4 Immediately', 'buffer':5, 'time':10, 'success': 'Fuel Cells Clear', 'failure': 'Fuel Cell 4 Damaged'},
-  {'id':13, 'location':'Guidance Systems', 'command':'Danger! Guidance control 6 is unstable.', 'input':14, 'hint':'Release Guidance Control 6 Now', 'buffer':5, 'time':10, 'success': 'Guidance stable', 'failure': 'Guidance Control 6 Damaged'},
-  {'id':17, 'location':'Launch Engineer', 'command':'Internal Power problem -- diagnosing now', 'on':32, 'flashAfter':32, 'input':11, 'hint':'Transfer Power from Buss E Immediately!', 'buffer':8, 'time':16, 'success': 'Power Stable', 'failure': 'Power Buss E Failing.'},
+  {'id':12, 'location':'Fuel Control', 'command':'Fuel Cell Pressure building', 'on':32, 'flashAfter':32, 'input':13, 'hint':'Clear Fuel Cell 4 Immediately', 'buffer':5, 'time':15, 'success': 'Fuel Cells Clear', 'failure': 'Fuel Cell 4 Damaged'},
+  {'id':13, 'location':'Guidance Systems', 'command':'Danger! Guidance control 6 is unstable.', 'input':14, 'hint':'Release Guidance Control 6 Now', 'buffer':5, 'time':15, 'success': 'Guidance stable', 'failure': 'Guidance Control 6 Damaged'},
+  {'id':17, 'location':'Launch Engineer', 'command':'Internal Power problem -- diagnosing now', 'on':32, 'flashAfter':32, 'input':11, 'hint':'Transfer Power from Buss E Immediately!', 'buffer':8, 'time':25, 'success': 'Power Stable', 'failure': 'Power Buss E Failing.'},
   
 ]
 
 var constants = [
   {'id':0, 'location':'Commander', 'success':'Shuttle Launch in T-40 Seconds!', 'on':[25, 26, 27], 'input':null, 'buffer': 5},
 
-  {'id':4, 'location':'Launch Engineer', 'command': 'Stand By For Booster Ignition Sequence', 'flashAfter':29, 'input':6, 'buffer': 5, 'time':12, 'hint':['Booster Ignition One GO!','Two GO!', 'Three GO!', 'Four GO!', 'Five GO!', 'Six GO!'], 'success': 'Ignition Sequence Successful', 'failure': 'Booster Ignition Failed'},
+  {'id':4, 'location':'Launch Engineer', 'command': 'Stand By For Booster Ignition Sequence', 'flashAfter':29, 'input':6, 'buffer': 5, 'time':15, 'hint':['Booster Ignition One GO!','Two GO!', 'Three GO!', 'Four GO!', 'Five GO!', 'Six GO!'], 'success': 'Ignition Sequence Successful', 'failure': 'Booster Ignition Failed'},
 
-  {'id':5, 'location':'Commander', 'command':'Stand By To Launch', 'on':31, 'input':10, 'hint':'Launch Now!', 'buffer':5, 'time':7, 'success': 'Launch Successful', 'failure': 'Failed to Launch'},
-  {'id':6, 'location':'Guidance', 'command':'Stand By for Rollover Sequence', 'on':28, 'flashAfter':30, 'input':9, 'hint':['Rollover Sequence "A" GO!','"B" GO!', '"C" GO!', '"D" GO!', 'E" GO!', '"F" GO!'], 'buffer':5, 'time':13, 'success': 'Rollover Successful', 'failure': 'Rollover Sequence Failed'}, // after we need to fire 31 of
+  {'id':5, 'location':'Commander', 'command':'Stand By To Launch', 'on':31, 'input':10, 'hint':'Launch Now!', 'buffer':5, 'time':15, 'success': 'Launch Successful', 'failure': 'Failed to Launch'},
+  {'id':6, 'location':'Guidance', 'command':'Stand By for Rollover Sequence', 'on':28, 'flashAfter':30, 'input':9, 'hint':['Rollover Sequence "A" GO!','"B" GO!', '"C" GO!', '"D" GO!', 'E" GO!', '"F" GO!'], 'buffer':5, 'time':33, 'success': 'Rollover Successful', 'failure': 'Rollover Sequence Failed'}, // after we need to fire 31 of
   {'id':7, 'location':'Fuel Control', 'command':'Booster Shutdown Did Not Complete for L3', 'on':27, 'off':31, 'input':3, 'hint':'Manually Release Booster L3 Only', 'buffer':5, 'time':12, 'success': 'Booster Shutdown Complete', 'failure': 'Booster L3 Failed'},
   {'id':8, 'location':'Commander', 'success':'Getting some shimmy -- Standby for Power Down', 'on':32, 'input':null, 'buffer':5},
-  {'id':14, 'location':'Fuel Control', 'command':'Prime the Booster Pump', 'input':11, 'hint':'Manually Shut Down Booster R1!', 'buffer':2, 'time':7, 'success': 'Booster Shutdown R1 is Complete', 'failure': 'Booster Critically Unstable.'},
+  {'id':14, 'location':'Fuel Control', 'command':'Prime the Booster Pump', 'input':11, 'hint':'Manually Shut Down Booster R1!', 'buffer':2, 'time':17, 'success': 'Booster Shutdown R1 is Complete', 'failure': 'Booster Critically Unstable.'},
   {'id':15, 'location':'Commander', 'success': 'Shuttle Approaching Apogee'},
   {'id':16, 'location':'Commander', 'success': 'Shuttle Is Now In Orbit. Congratulations!'},
 ]

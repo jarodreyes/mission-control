@@ -9,9 +9,9 @@ var five = require("johnny-five");
 var fs = require('fs');
 var clientIo = require('socket.io-client');
 console.log(clientIo);
-// console.log = function() {
+console.log = function() {
 
-// };
+};
 var settings = JSON.parse(fs.readFileSync('./settings.json'));
 var io = require('socket.io')(http);
 var boards = [];
