@@ -1,7 +1,6 @@
 var five = require("johnny-five");
 var clientIo = require('socket.io-client');
 var CommandFactory = require('./CommandFactory');
-var Player = require('player');
 var fs = require('fs');
 
 var settings = JSON.parse(fs.readFileSync('./settings.json'));
@@ -295,23 +294,23 @@ Station.prototype.setupListeners = function() {
 }
 
 Station.prototype.stopAllAudio = function() {
-  this.player.stop();
+  // this.player.stop();
 }
 
 Station.prototype.startAudio = function() {
-  var station = this;
-  this.player = new Player(__dirname + '/launch.mp3');
+  // var station = this;
+  // this.player = new Player(__dirname + '/launch.mp3');
 
-  // play now and callback when playend
-  this.player.play();
+  // // play now and callback when playend
+  // this.player.play();
 
-  this.player.on('playing',function(item){
-    console.log('im playing... src:' + item);
-  });
-  this.player.on('error', function(err) {
-    console.log('Player Error');
-    console.log(err);
-  });
+  // this.player.on('playing',function(item){
+  //   console.log('im playing... src:' + item);
+  // });
+  // this.player.on('error', function(err) {
+  //   console.log('Player Error');
+  //   console.log(err);
+  // });
 }
 
 Station.prototype.removeStation = function() {
