@@ -313,7 +313,7 @@ StationBoard.prototype.processVoltage = function(pin, voltage) {
       }
     } else {
       if (voltage >= pin.voltage && pin.pin != 10) {
-        console.log(+pin.pin+" SWITCH VOLTAGE @@@"+pin.pin+"@@"+pin.pin+"@"+pin.pin+"@@"+pin.pin+"@"+pin.pin+"@@"+pin.pin+"@ "+voltage);
+        console.log(+pin.pin+" SWITCH VOLTAGE @@@"+sb.id+"@@"+pin.pin+"@"+pin.pin+"@@"+pin.pin+"@"+pin.pin+"@@"+pin.pin+"@ "+voltage);
         sb.socket.emit('pin_fired', {station:sb.id, pin:pin.pin});
         sb.setPinInactive(pin.pin);
       }
