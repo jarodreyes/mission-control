@@ -194,6 +194,8 @@ StationBoard.prototype.setupListeners = function() {
 StationBoard.prototype.getBoardReady = function() {
   var sb = this;
   this.board.on("ready", function() {
+    // Turn off the annoying noises
+    sb.playAllAudio(false);
     // Create an arduino object to pass around
     var ardy = this;
 
@@ -210,7 +212,6 @@ StationBoard.prototype.getBoardReady = function() {
       sb.announceConnected();
     });
   });
-  sb.playAllAudio(false);
 }
 
 StationBoard.prototype.prepareInputs = function(callback) {
