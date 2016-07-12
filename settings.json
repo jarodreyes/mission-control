@@ -1,1 +1,24 @@
-{"station_count":4,"wait_time":3000,"default_interval":5000,"failures_allowed":6,"stations":{"1":{"port":"/dev/cu.usbmodem142421","active":true},"2":{"port":"/dev/cu.usbmodem142411","active":true},"3":{"port":"/dev/cu.usbmodem14231","active":true},"4":{"port":"/dev/cu.usbmodem14221","active":true}}}
+{
+  "station_count": 4,
+  "wait_time": 3000,
+  "default_interval": 5000,
+  "failures_allowed": 6,
+  "stations": {
+    "1": {
+      "port": "/dev/cu.usbmodem142421",
+      "active": true
+    },
+    "2": {
+      "port": "/dev/cu.usbmodem142411",
+      "active": true
+    },
+    "3": {
+      "port": "/dev/cu.usbmodem14231",
+      "active": true
+    },
+    "4": {
+      "port": "/dev/cu.usbmodem14221",
+      "active": true
+    }
+  }
+}

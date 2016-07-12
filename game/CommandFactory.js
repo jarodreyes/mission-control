@@ -1,4 +1,4 @@
-MAX_STEPS = 8;
+MAX_STEPS = 7;
 var gameSteps = [
   {'id':1, 'location':'Fuel Control', 'command':'Fuel Cell Error!', 'on':32, 'flashAfter':32, 'input':1, 'hint':'Must Clear Fuel Cells 1, and 5 Only', 'buffer':1, 'time':11, 'success': 'Fuel Cells Clear', 'failure': 'Failed to clear Fuel Cells!'},
 
@@ -13,7 +13,7 @@ var gameSteps = [
   {'id':11, 'location':'Guidance', 'command':'Primary Gyroscope Not Responding', 'flashOn':27, 'input':8, 'hint':'Increase Gyroscope Speed', 'buffer':5, 'time':10, 'success': 'Primary Gyroscope Responsive', 'failure': 'Gyroscope Failure'},
   {'id':12, 'location':'Fuel Control', 'command':'Fuel Cell Pressure building', 'on':32, 'flashAfter':32, 'input':13, 'hint':'Clear Fuel Cell 4 Immediately', 'buffer':5, 'time':10, 'success': 'Fuel Cells Clear', 'failure': 'Fuel Cell 4 Damaged'},
   {'id':13, 'location':'Guidance Systems', 'command':'Danger! Guidance control 6 is unstable.', 'input':14, 'hint':'Release Guidance Control 6 Now', 'buffer':5, 'time':10, 'success': 'Guidance stable', 'failure': 'Guidance Control 6 Damaged'},
-  {'id':17, 'location':'Launch Engineer', 'command':'Internal Power problem -- diagnosing now', 'on':32, 'flashAfter':32, 'input':11, 'hint':'Transfer Power from Buss E Immediately!', 'buffer':8, 'time':16, 'success': 'Power Stable', 'failure': 'Power Buss E Failing.'},
+  // {'id':17, 'location':'Launch Engineer', 'command':'Internal Power problem -- diagnosing now', 'on':32, 'flashAfter':32, 'input':11, 'hint':'Transfer Power from Buss E Immediately!', 'buffer':8, 'time':16, 'success': 'Power Stable', 'failure': 'Power Buss E Failing.'},
   
 ]
 
@@ -26,7 +26,7 @@ var constants = [
   {'id':6, 'location':'Guidance', 'command':'Stand By for Rollover Sequence', 'on':28, 'flashAfter':30, 'input':9, 'hint':['Rollover Sequence "A" GO!','"B" GO!', '"C" GO!', '"D" GO!', 'E" GO!', '"F" GO!'], 'buffer':5, 'time':13, 'success': 'Rollover Successful', 'failure': 'Rollover Sequence Failed'}, // after we need to fire 31 of
   {'id':7, 'location':'Fuel Control', 'command':'Booster Shutdown Did Not Complete for L3', 'on':27, 'off':31, 'input':3, 'hint':'Manually Release Booster L3 Only', 'buffer':5, 'time':12, 'success': 'Booster Shutdown Complete', 'failure': 'Booster L3 Failed'},
   {'id':8, 'location':'Commander', 'success':'Getting some shimmy -- Standby for Power Down', 'on':32, 'input':null, 'buffer':5},
-  {'id':14, 'location':'Fuel Control', 'command':'Prime the Booster Pump', 'input':11, 'hint':'Manually Shut Down Booster R1!', 'buffer':2, 'time':7, 'success': 'Booster Shutdown R1 is Complete', 'failure': 'Booster Critically Unstable.'},
+  // {'id':14, 'location':'Fuel Control', 'command':'Prime the Booster Pump', 'input':11, 'hint':'Manually Shut Down Booster R1!', 'buffer':2, 'time':7, 'success': 'Booster Shutdown R1 is Complete', 'failure': 'Booster Critically Unstable.'},
   {'id':15, 'location':'Commander', 'success': 'Shuttle Approaching Apogee'},
   {'id':16, 'location':'Commander', 'success': 'Shuttle Is Now In Orbit. Congratulations!'},
 ]

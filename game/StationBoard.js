@@ -210,6 +210,7 @@ StationBoard.prototype.getBoardReady = function() {
       sb.announceConnected();
     });
   });
+  sb.playAllAudio(false);
 }
 
 StationBoard.prototype.prepareInputs = function(callback) {

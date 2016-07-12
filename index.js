@@ -135,7 +135,7 @@ admin.on('connection', function(socket) {
   socket.on('admin_joined', function(data){
     console.log('SOCKET.IO admin added for socket' + socket.id);
   });
-})
+});
 
 commanders.on('connection', function(socket) {
   console.log('index: commanders connecting');
