@@ -194,8 +194,6 @@ StationBoard.prototype.setupListeners = function() {
 StationBoard.prototype.getBoardReady = function() {
   var sb = this;
   this.board.on("ready", function() {
-    // Turn off the annoying noises
-    sb.playAllAudio(false);
     // Create an arduino object to pass around
     var ardy = this;
 
@@ -215,6 +213,7 @@ StationBoard.prototype.getBoardReady = function() {
 }
 
 StationBoard.prototype.prepareInputs = function(callback) {
+  var sb = this;
   this.addInput(1);
   this.addInput(2);
   this.addInput(3);
@@ -249,6 +248,8 @@ StationBoard.prototype.prepareInputs = function(callback) {
   setTimeout(function() {
     callback();
   }, 1000);
+  // Turn off the annoying noises
+  sb.playAllAudio(false);
 }
 
 StationBoard.prototype.addInput = function(i) {
@@ -291,7 +292,7 @@ StationBoard.prototype.playAllAudio = function(play) {
 StationBoard.prototype.playAudio = function(slug, play) {
   var sb = this;
   var output = getOutputBySlug(slug);
-  console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! PLAY AUDIO "+output.pin);
+  console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! PLAY AUDIO "+output.pin+" on:"+play);
   var delay = slug == 'failSound' ? 3000 : 500;
   // get length of audio output.length
   var i = play ? output.on : output.off;
@@ -315,7 +316,7 @@ StationBoard.prototype.processVoltage = function(pin, voltage) {
       }
     } else {
       if (voltage >= pin.voltage && pin.pin != 10) {
-        console.log(+pin.pin+" SWITCH VOLTAGE @@@"+sb.id+"@@"+pin.pin+"@"+pin.pin+"@@"+pin.pin+"@"+pin.pin+"@@"+pin.pin+"@ "+voltage);
+        // console.log(+pin.pin+" SWITCH VOLTAGE @@@"+sb.id+"@@"+pin.pin+"@"+pin.pin+"@@"+pin.pin+"@"+pin.pin+"@@"+pin.pin+"@ "+voltage);
         sb.socket.emit('pin_fired', {station:sb.id, pin:pin.pin});
         sb.setPinInactive(pin.pin);
       }
