@@ -150,7 +150,7 @@ Station.prototype.processFailure = function(command) {
 }
 
 Station.prototype.processMisfire = function(command) {
-  console.log("MISFIRE!");
+  // console.log("MISFIRE!");
   this.misses++;
 }
 
@@ -295,20 +295,18 @@ Station.prototype.setupListeners = function() {
 }
 
 Station.prototype.stopAllAudio = function() {
-  this.player.stop();
-  this.player.on('error', function(err) {
-    console.log('Player Error');
-    console.log(err);
-  });
+  var station = this;
+  // this.player.on('playing', function(item) {
+  //   console.log('Player is playing '+item);
+  //   station.player.stop();
+  // })
 }
 
 Station.prototype.startAudio = function() {
   var station = this;
 
   // play now and callback when playend
-  this.player.play(function(err, player){
-    console.log('playend!');
-  });
+  this.player.play();
 
   this.player.on('playing',function(item){
     console.log('im playing... src:' + item);
@@ -321,6 +319,7 @@ Station.prototype.startAudio = function() {
     console.log('Player Error');
     console.log(err);
   });
+  this.player.stop();
 }
 
 Station.prototype.removeStation = function() {

@@ -69,7 +69,7 @@ StationBoard.prototype.setupListeners = function() {
   Process lights/sounds for new command */
   this.socket.on('command_command_'+sb.id, function(command) {
 
-    console.log('COMMAND_COMMAND on Arduino Input ='+command.input);
+    // console.log('COMMAND_COMMAND on Arduino Input ='+command.input);
 
     if (command.input) {
       sb.setPinActive(command.input);
@@ -77,7 +77,7 @@ StationBoard.prototype.setupListeners = function() {
 
     sb.processWiringCommands(command);
 
-    console.log('ACTIVE PINS = '+sb.activePins);
+    // console.log('ACTIVE PINS = '+sb.activePins);
   });
 
   /* Listen for success and failure
@@ -195,7 +195,7 @@ StationBoard.prototype.prepareInputs = function(callback) {
   this.addInput(8);
   this.addInput(9);
   this.addInput(10);
-  this.addInput(11);
+  // this.addInput(11);
   this.addInput(13);
   this.addInput(14);
   this.board.pinMode(21, five.Pin.OUTPUT);
@@ -277,17 +277,17 @@ StationBoard.prototype.playAudio = function(slug, play) {
 
 StationBoard.prototype.processVoltage = function(pin, voltage) {
   var sb = this;
-  // console.log("@@@ PIN "+pin.pin+" @@@@@@@@ SWITCH VOLTAGE @@@@@@@@@@@@ "+voltage);
+  // console.log("@@@ PIN RESTING VOLTAGE "+pin.pin+" @@@@@@@@ SWITCH VOLTAGE @@@@@@@@@@@@ "+voltage);
   // Check that we aren't in standby, and then check some inputs.
   if (!sb.inStandby()) {
     if (pin.pin == 10 && sb.isPinActive(pin.pin)) {
       if (voltage < pin.voltage) {
         sb.socket.emit('launch_fired', {station:sb.id, pin:pin.pin});
-        // console.log("Pin"+i+"Voltage is: "+voltage);
+        console.log("Pin"+i+"Voltage is: "+voltage);
       }
     } else {
       if (voltage >= pin.voltage && pin.pin != 10) {
-        // console.log(+pin.pin+" SWITCH VOLTAGE @@@"+sb.id+"@@"+pin.pin+"@"+pin.pin+"@@"+pin.pin+"@"+pin.pin+"@@"+pin.pin+"@ "+voltage);
+        console.log(+pin.pin+" SWITCH VOLTAGE @@@"+sb.id+"@@"+pin.pin+"@"+pin.pin+"@@"+pin.pin+"@"+pin.pin+"@@"+pin.pin+"@ "+voltage);
         sb.socket.emit('pin_fired', {station:sb.id, pin:pin.pin});
         sb.setPinInactive(pin.pin);
       }
