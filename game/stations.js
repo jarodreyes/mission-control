@@ -332,7 +332,7 @@ Station.prototype.removeStation = function() {
 
 Station.prototype.endGame = function() {
   var station = this;
-  this.socket.emit('end_game', {'station': this.id, 'points':this.points, 'misses':this.misses});
+  this.socket.emit('end_station_game', {'station': this.id, 'points':this.points, 'misses':this.misses});
 }
 
 Station.prototype.endSequences = function(callback) {
