@@ -296,13 +296,19 @@ Station.prototype.setupListeners = function() {
 
 Station.prototype.stopAllAudio = function() {
   this.player.stop();
+  this.player.on('error', function(err) {
+    console.log('Player Error');
+    console.log(err);
+  });
 }
 
 Station.prototype.startAudio = function() {
   var station = this;
 
   // play now and callback when playend
-  this.player.play();
+  this.player.play(function(err, player){
+    console.log('playend!');
+  });
 
   this.player.on('playing',function(item){
     console.log('im playing... src:' + item);
