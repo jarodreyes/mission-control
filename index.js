@@ -251,10 +251,10 @@ function tryToStartGame() {
 
 function tryToEndGame() {
   if (Stations.getStationCount() == STATIONS_FINISHED) {
-    var stations = processWinners();
-    arduinos.emit('game_finished', {'won':stations.winner});
-    commanders.emit('game_finished', {'won':stations.winner, 'lost':stations.loser, 'totalPoints':stations.points});
-    socket.emit('game_finished', {'won':stations.winner, 'lost':stations.loser, 'totalPoints':stations.points})
+    var results = processWinners();
+    arduinos.emit('game_finished', {'won':results.winner});
+    commanders.emit('game_finished', {'won':results.winner, 'lost':results.loser, 'totalPoints':results.points});
+    stations.emit('game_finished', {'won':results.winner, 'lost':results.loser, 'totalPoints':results.points})
   }
 }
 

@@ -101,10 +101,10 @@ StationBoard.prototype.setupListeners = function() {
   /* Listen for game finished
      Issue lights/sounds for game winner/loser */
   this.socket.on('game_finished', function(data) {
-
+    console.log('game ginished for '+ sb.id);
     sb.standby = true;
     sb.activePins = [];
-    sb.playAllAudio(false);
+    // sb.playAllAudio(false);
 
     for (i = 25; i < 32; i += 1) {
       sb.processPinIO(i, "off");
@@ -313,7 +313,6 @@ StationBoard.prototype.processPinIO = function(pinObject, dir) {
   } else {
     var pin = getOutput(pinObject);
     var direction = dir == "on" ? pin.on : pin.off;
-    console.log("DIRECTION ************** "+direction);
     this.board.digitalWrite(pin.pin, direction);
   }
 }
