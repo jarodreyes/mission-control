@@ -196,16 +196,12 @@ stations.on('connection', function(socket) {
     commanders.emit("station"+data.station, {'msg': data.msg, 'type': data.type, 'timeLeft': data.timeLeft, 'cid':data.cid});
   });
 
-  socket.on('end_game', function(data) {
+  socket.on('end_station_game', function(data) {
     STATIONS_FINISHED++;
     commanders.emit('end_game'+data.station, {'points':data.points, 'misses':data.misses});
 
-    if (Stations.getStationCount() == STATIONS_FINISHED) {
-      var stations = processWinners();
-      arduinos.emit('game_finished', {'won':stations.winner});
-      commanders.emit('game_finished', {'won':stations.winner, 'lost':stations.loser, 'totalPoints':stations.points});
-      socket.emit('game_finished', {'won':stations.winner, 'lost':stations.loser, 'totalPoints':stations.points})
-    }
+    // let's check if we should end the game
+    tryToEndGame();
 
   })
 
@@ -213,13 +209,9 @@ stations.on('connection', function(socket) {
     STATIONS_FINISHED++;
     commanders.emit('station_removed'+data.station, {'msg': 'Failure! Station Removed from Cluster with '+data.misses+' Misses.', 'misses':data.misses});
     arduinos.emit('station_removed', {'station': data.station, 'misses':data.misses});
-    
-    if (Stations.getStationCount() == STATIONS_FINISHED) {
-      var stations = processWinners();
-      arduinos.emit('game_over', {'won':stations.winner, 'removed':data.station});
-      commanders.emit('game_finished', {'won':stations.winner, 'lost':stations.loser, 'totalPoints':stations.points});
-      socket.emit('game_finished', {'won':stations.winner, 'lost':stations.loser, 'totalPoints':stations.points})
-    }
+
+    // let's check if we should end the game
+    tryToEndGame();
   });
 
   socket.on('station_joined', function(data) {
@@ -254,6 +246,15 @@ function tryToStartGame() {
       }, 100);
       
     }
+  }
+}
+
+function tryToEndGame() {
+  if (Stations.getStationCount() == STATIONS_FINISHED) {
+    var stations = processWinners();
+    arduinos.emit('game_finished', {'won':stations.winner});
+    commanders.emit('game_finished', {'won':stations.winner, 'lost':stations.loser, 'totalPoints':stations.points});
+    socket.emit('game_finished', {'won':stations.winner, 'lost':stations.loser, 'totalPoints':stations.points})
   }
 }
 

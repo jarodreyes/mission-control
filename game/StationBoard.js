@@ -42,6 +42,7 @@ StationBoard.prototype.init = function(opts) {
   this.resetting = false;
   this.standby = false;
   this.activePins = [];
+  this.removed = false;
 
   // Do some setup
   this.setupInputs();
@@ -109,43 +110,14 @@ StationBoard.prototype.setupListeners = function() {
       sb.processPinIO(i, "off");
     }
 
-    if (sb.id == data.won ) {
+    if (sb.id == data.won && !sb.removed) {
 
       sb.board.digitalWrite(23, 0);
       sb.processPinFlash(24, {timeLeft:30000});
       // Play winner music
       sb.playAudio('winSound', true);
     }
-    console.log('GAME FINISHED FROM ARDUINO');
-    setTimeout(function() {
-      sb.socket.emit('station_standby', {station: sb.id});
-    }, 6000);
 
-  });
-
-  this.socket.on('game_over', function(data) {
-    console.log("GAME OVER!");
-    sb.standby = true;
-    sb.activePins = [];
-    sb.playAllAudio(false);
-
-    for (i = 25; i < 32; i += 1) {
-      sb.processPinIO(i, "off");
-    }
-
-    if (sb.id == data.won && sb.id != data.removed) {
-
-      sb.board.digitalWrite(23, 0);
-      sb.processPinFlash(24, {timeLeft:30000});
-      // Play winner music
-      sb.playAudio('winSound', true);
-    } else {
-      sb.board.digitalWrite(21, 0);
-      sb.processPinFlash(22, {timeLeft:30000});
-      // Play fail music
-      sb.playAudio('failSound', true);
-    }
-    console.log('GAME FINISHED FROM ARDUINO');
     setTimeout(function() {
       sb.socket.emit('station_standby', {station: sb.id});
     }, 6000);
@@ -175,18 +147,17 @@ StationBoard.prototype.setupListeners = function() {
   /* Listen for station failure
      Show fail beacons */
   this.socket.on('station_removed', function(data) {
-    console.log('station lost');
     if (sb.id == data.station) {
+      sb.removed = true;
+      console.log('station removed: '+data.station);
       for (i = 25; i < 32; i += 1) {
         sb.processPinIO(i, "off");
       }
       sb.board.digitalWrite(21, 0);
       sb.processPinFlash(22, {timeLeft:30000});
+      // Play Fail Audio
+      sb.playAudio('failSound', true);
     }
-
-    // Play Fail Audio
-    sb.playAudio('failSound', true);
-
   });
 
 }
@@ -333,8 +304,6 @@ StationBoard.prototype.processVoltage = function(pin, voltage) {
 }
 
 StationBoard.prototype.processPinIO = function(pinObject, dir) {
-  console.log("Is array: "+pinObject instanceof Array);
-
   if (pinObject instanceof Array) {
     for (var i = pinObject.length - 1; i >= 0; i--) {
       var pin = getOutput(pinObject[i]);
