@@ -26,6 +26,8 @@ html
 
     div.content
       form#update.input-group
+        button.btn.btn-primary.start(href="#" style="min-height:98px; width:50%;") Start Game
+        button.btn.btn-negative.kill(href="#" style="min-height:98px; width:50%;") Stop Game
         .input-row
           label Fails Allowed
           input.failures(type="text" name="failures" placeholder="Default: 4")
@@ -56,7 +58,6 @@ html
 
         button.btn.btn-block.btn-primary.submit(href="#" style="min-height:98px;") Update Settings
 
-      button#restart.btn.btn-block.btn-negative(href="#" class="restartBtn button") Restart Server
       p.restartNotice
     script.
       var activeStations = [1, 2, 3, 4];
@@ -69,11 +70,17 @@ html
 
       document.querySelector('#failToggle').addEventListener('toggle', updateFailMode);
       
+      function startGame() {
+        $.post('/startGame', function(data) {
+          console.log("starting game");
+          $(".restartNotice").text("Starting...");
+        });
+      }
 
-      function restartServer() {
+      function stopGame() {
         $.post('/appRestart', function(data) {
-          console.log("restarting");
-          $(".restartNotice").text("Restarting...");
+          console.log("stopping game");
+          $(".restartNotice").text("Stopping Game...");
         });
       }
 
@@ -116,10 +123,12 @@ html
 
       $(document).on("ready", function() {
 
-        $(".restartBtn").click(restartServer);
-
         $("button.station").click(checkData);
 
         $("button.submit").click(updateSettings);
+
+        $("button.start").click(startGame);
+
+        $("button.kill").click(stopGame);
 
       });

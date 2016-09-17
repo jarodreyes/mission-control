@@ -1,6 +1,6 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { 
-  font: 33px 'Consolas', Serif, Arial;
+  font: 38px 'Consolas', Serif, Arial;
   color: lime;
   background: black;
 }
@@ -28,23 +28,34 @@ a.button:hover {
   background:darkred;
 }
 
-#commands { list-style-type: none; margin: 0; padding: 0 0 120px 0px; }
-#commands li { padding: 10px 70px; position: relative; }
+#commands { list-style-type: none; margin: 0; padding: 40px 0 120px 0px; }
+#commands li { padding: 15px 70px; position: relative; }
 #commands li:nth-child(odd) { background: rgba(255,255,255,0.1); }
+
+#commands li.error {
+  opacity:0.65;
+}
+
+#commands li.failure {
+  background:red;
+  color:white;
+  font-size:20px;
+  width:100%;
+}
 
 #commands li.error::after {
   display:inline-block;
   content:"WARNING!";
   font-size:17px;
   float:right;
-  color:red;
+  color:orange;
 }
 #commands li.hint::after {
   display:inline-block;
   content:"FATAL!";
   font-size:17px;
   float:right;
-  color:orange;
+  color:red;
 }
 #commands .progressBar {
   display: block;

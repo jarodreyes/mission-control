@@ -41,13 +41,15 @@ function triggerRestart() {
   fs.appendFileSync("./game/restarts.js", msg);
 }
 
-function updateStations(numArray) {
+function updateSettings(numArray) {
   console.log(numArray.indexOf("0")+" ************************** NUM ARRAY")
   if (numArray.indexOf("0") == -1) {
     for (var stationId in settings.stations) {
       console.log("STATION ID ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"+stationId)
       if (numArray.indexOf(stationId) == -1) {
         settings.stations[stationId].active = false;
+      } else {
+        settings.stations[stationId].active = true;
       }
     }
   } else {
@@ -59,8 +61,8 @@ function updateStations(numArray) {
 }
 
 for (var i = settings.station_count - 1; i >= 0; i--) {
-  // var board = new five.Board();
-  var board = new five.Board({port: settings.stations[ACTIVE_STATIONS[i]].port});
+  var board = new five.Board();
+  // var board = new five.Board({port: settings.stations[ACTIVE_STATIONS[i]].port});
   board.on("fail", function(event) {
     console.log("Received a %s message, from %s, reporting: %s", event.type, event.class, event.message);
     triggerRestart();
@@ -93,6 +95,11 @@ app.get('/admin', function(req, res){
 
 app.post('/appRestart', function(req, res){
   triggerRestart();
+  return res.status(300).end();
+});
+
+app.post('/startGame', function(req, res){
+  resetGame();
   return res.status(300).end();
 });
 
@@ -272,7 +279,4 @@ var resetGame = function() {
   Stations.init(boards);
   Stations.newGame(STATION_COUNT);
 }
-
-// First pass
-resetGame();
 
