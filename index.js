@@ -42,7 +42,6 @@ function triggerRestart() {
 }
 
 function updateSettings(numArray) {
-  console.log(numArray.indexOf("0")+" ************************** NUM ARRAY")
   if (numArray.indexOf("0") == -1) {
     for (var stationId in settings.stations) {
       console.log("STATION ID ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"+stationId)
@@ -118,7 +117,7 @@ app.post('/updateSettings', function(req, res){
     fails = 15;
   }
   settings.failures_allowed = fails;
-  settings.stations = updateStations(active);
+  settings.stations = updateSettings(active);
 
   fs.writeFileSync('./settings.json', JSON.stringify(settings));
   console.log("######################################## DATA: "+data);
@@ -236,7 +235,7 @@ stations.on('connection', function(socket) {
 function tryToStartGame() {
   var stationTotal = Stations.getStationCount();
   if (!RUNNING) {
-    console.log(Stations.getStationCount()+"Station Ready: "+STATIONS_READY+" Commanders Ready: "+COMMANDERS_READY);
+    console.log("Stations Ready: "+STATIONS_READY+" Commanders Ready: "+COMMANDERS_READY);
     if (stationTotal == STATIONS_READY && stationTotal == COMMANDERS_READY && stationTotal == BOARDS_READY && stationTotal == STATION_COUNT) {
       // start game!
       RUNNING = true;

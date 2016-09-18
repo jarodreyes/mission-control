@@ -263,7 +263,7 @@ StationBoard.prototype.playAllAudio = function(play) {
 StationBoard.prototype.playAudio = function(slug, play) {
   var sb = this;
   var output = getOutputBySlug(slug);
-  console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! PLAY AUDIO "+output.pin+" on:"+play);
+  // console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! PLAY AUDIO "+output.pin+" on:"+play);
   var delay = slug == 'failSound' ? 3000 : 500;
   // get length of audio output.length
   var i = play ? output.on : output.off;
